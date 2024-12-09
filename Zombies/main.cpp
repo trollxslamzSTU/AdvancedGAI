@@ -599,7 +599,7 @@ int main(int argc, char * argv[])
 {
 	return sdl_game::init<game_loop>(
 	{
-		.title = "Forester",
+		.title = "Zombies",
 		.width = 1280,
 		.height = 768,
 	});

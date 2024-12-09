@@ -152,6 +152,7 @@ bool ChessPlayerAI::TakeATurn(SDL_Event e)
 
 int ChessPlayerAI::MiniMax(Board board, int depth, Move* currentMove)
 {
+
 	return Maximise(board, depth, currentMove, INT_MAX);
 }
 
@@ -159,6 +160,7 @@ int ChessPlayerAI::MiniMax(Board board, int depth, Move* currentMove)
 
 int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int parentLow)
 {
+
 	//TODO
 	return INT_MAX;
 }

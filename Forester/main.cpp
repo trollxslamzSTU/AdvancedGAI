@@ -1,0 +1,404 @@
+#include "forester.h"
+#include "slot_map.h"
+
+#include <bitset>
+#include <format>
+#include <deque>
+
+using namespace forester;
+
+namespace
+{
+	struct building_work final
+	{
+		world_coordinate target;
+
+		world_coordinate origin;
+
+		world_space::pawn_key pawn_key;
+
+		static bool is_complete(world_space & space, building_work & work)
+		{
+			world_chunk const chunk = space.fetch_chunk(work.target.chunk());
+			bool const is_construction_complete = chunk[work.target.xy()].object_health >= 1.f;
+
+			return is_construction_complete && space.unassign_pawn(work.pawn_key);
+		}
+	};
+
+	std::optional<world_space::pawn::flag> object_collection_flag(world_object const & object)
+	{
+		using enum world_space::pawn::flag;
+
+		switch (object)
+		{
+			case world_object_tree: return flag_collected_wood;
+			case world_object_rock: return flag_collected_rock;
+			default: return std::nullopt;
+		}
+	}
+
+	struct assign_pawn final : public goap_action<world_space, building_work>
+	{
+		bool test(world_space const & space, building_work const & work) override
+		{
+			return !work.pawn_key && !space.unassigned_pawns().empty();
+		}
+
+		void apply(world_space & space, building_work & work) override
+		{
+			SDL_assert(!work.pawn_key);
+
+			work.pawn_key = space.assign_pawn();
+
+			if (world_space::pawn * const pawn = space.has_assigned_pawn(work.pawn_key))
+			{
+				work.origin = world_coordinate(space.has_assigned_pawn(work.pawn_key)->position);
+			}
+		}
+	};
+
+	// TODO: Write your own tasks to create behaviors for your AI pawns.
+
+	struct game_loop final
+	{
+		bool on_ready(sdl_game::app_context & context)
+		{
+			using sdl_game::to_fpoint;
+
+			constexpr auto const default_texture_filtering = sdl_game::texture_filtering_linear;
+
+			if (!(_entities_texture = context.load_texture("assets/entities.png", default_texture_filtering)))
+			{
+				return false;
+			}
+
+			if (!(_ground_tiles_texture = context.load_texture("assets/ground_tiles.png", sdl_game::texture_filtering_nearest)))
+			{
+				return false;
+			}
+
+			if (!(_structures_texture = context.load_texture("assets/structures.png", default_texture_filtering)))
+			{
+				return false;
+			}
+
+			for (size_t i = 0; i < _rock_textures.size(); i += 1)
+			{
+				if (!(_rock_textures[i] = context.load_texture(std::format("assets/rock_{:02}.png", i + 1), default_texture_filtering)))
+				{
+					return false;
+				}
+			}
+
+			for (size_t i = 0; i < _tree_textures.size(); i += 1)
+			{
+				if (!(_tree_textures[i] = context.load_texture(std::format("assets/tree_{:02}.png", i + 1), default_texture_filtering)))
+				{
+					return false;
+				}
+			}
+
+			_space = world_space(297277263);
+			_cell_size = to_fpoint(context.query_texture(_ground_tiles_texture).height);
+			_entity_size = to_fpoint(context.query_texture(_entities_texture).height);
+			_chunk_size = to_fpoint(world_chunk::cells_per_chunk_sqrt) * _cell_size;
+
+			for (size_t i = 0; i < _fetched_chunks.size(); i += 1)
+			{
+				_fetched_chunks[i] = _space.fetch_chunk(chunk_offsets[i]);
+			}
+
+			for (size_t i = 0; i < 5; i += 1)
+			{
+				_space.spawn(world_position({0, 0}, {0.025f * i, 0}));
+			}
+
+			return true;
+		}
+
+		void on_update(sdl_game::app_context const & context)
+		{
+			SDL_Point const key_direction = context.key_axis(
+			{
+				.x_neg = SDL_SCANCODE_A,
+				.x_pos = SDL_SCANCODE_D,
+				.y_neg = SDL_SCANCODE_W,
+				.y_pos = SDL_SCANCODE_S,
+			});
+
+			for (size_t i = 0; i < _fetched_chunks.size(); i += 1)
+			{
+				std::optional saved_chunk = _space.has_chunk_changed(_camera_position.chunk() + chunk_offsets[i]);
+
+				if (!saved_chunk)
+				{
+					continue;
+				}
+
+				auto const & [chunk, timestamp] = *saved_chunk;
+
+				if (_fetched_timestamps[i] < timestamp)
+				{
+					_fetched_chunks[i] = chunk;
+				}
+			}
+
+			if (key_direction.x || key_direction.y)
+			{
+				constexpr float const camera_speed = 0.002f;
+
+				_camera_position.move_direction(camera_speed,
+				{
+					.x = key_direction.x,
+					.y = key_direction.y,
+				});
+
+				if (_camera_position.chunk() != _last_fetched_chunk)
+				{
+					for (size_t i = 0; i < _fetched_chunks.size(); i += 1)
+					{
+						_fetched_chunks[i] = _space.fetch_chunk(_camera_position.chunk() + chunk_offsets[i]);
+					}
+				}
+
+				_last_fetched_chunk = _camera_position.chunk();
+			}
+
+			if (context.mouse_buttons().is_pressed(SDL_BUTTON_LEFT))
+			{
+				// TODO: Create some behaviors when you click on tiles.
+				// HINT: maybe add some work to a queue for your pawns to process?
+			}
+
+			if (context.key_buttons().is_pressed(SDL_SCANCODE_H))
+			{
+				_is_showing_grid = !_is_showing_grid;
+			}
+		}
+
+		void on_render(sdl_game::app_context & context)
+		{
+			using sdl_game::to_fpoint;
+
+			sdl_game::texture_info const renderer_info = context.query_renderer();
+
+			SDL_FPoint const render_center =
+			{
+				.x = (renderer_info.width / 2.f) - (_chunk_size.x * _camera_position.x()),
+				.y = (renderer_info.height / 2.f) - (_chunk_size.y * _camera_position.y()),
+			};
+
+			for (size_t i = 0; i < _fetched_chunks.size(); i += 1)
+			{
+				render_chunk(context, _fetched_chunks[i], render_center + (_chunk_size * to_fpoint(chunk_offsets[i])));
+			}
+
+			SDL_FPoint const actor_texture_center = _entity_size / to_fpoint(2.f);
+
+			for (world_space::pawn const & pawn : _space.unassigned_pawns())
+			{
+				SDL_FPoint const screen_position = world_to_screen(context, pawn.position);
+
+				context.render_sprite(_entities_texture, screen_position - actor_texture_center, {});
+			}
+
+			for (world_space::pawn const & pawn : _space.assigned_pawns())
+			{
+				SDL_FPoint const screen_position = world_to_screen(context, pawn.position);
+
+				context.render_sprite(_entities_texture, screen_position - actor_texture_center,
+				{
+					.tint_color = sdl_game::rgb(0.f, 1.f, 0.f),
+				});
+			}
+		}
+
+		private:
+		static constexpr std::array<SDL_Point, 9> const chunk_offsets =
+		{
+			SDL_Point(-1, -1),
+			SDL_Point(0, -1),
+			SDL_Point(1, -1),
+			SDL_Point(-1, 0),
+			SDL_Point(0, 0),
+			SDL_Point(1, 0),
+			SDL_Point(-1, 1),
+			SDL_Point(0, 1),
+			SDL_Point(1, 1),
+		};
+
+		world_space _space;
+
+		std::shared_ptr<SDL_Texture> _entities_texture;
+
+		world_position _camera_position = world_position({0, 0}, {0.5f, 0.5f});
+
+		SDL_Point _last_fetched_chunk = {0, 0};
+
+		SDL_FPoint _cell_size = {};
+
+		SDL_FPoint _chunk_size = {};
+
+		SDL_FPoint _entity_size = {};
+
+		std::array<world_chunk, 9> _fetched_chunks;
+
+		std::array<world_space::timestamp, 9> _fetched_timestamps;
+
+		std::shared_ptr<SDL_Texture> _ground_tiles_texture;
+
+		std::array<std::shared_ptr<SDL_Texture>, 2> _rock_textures;
+
+		std::array<std::shared_ptr<SDL_Texture>, 2> _tree_textures;
+
+		std::shared_ptr<SDL_Texture> _structures_texture;
+
+		goap_plan<world_space, building_work> _building_plan =
+		{
+			assign_pawn(),
+		};
+
+		bool _is_showing_grid = false;
+
+		void render_chunk(sdl_game::app_context & context, world_chunk const & chunk, SDL_FPoint const & position)
+		{
+			for (size_t i = 0; i < world_chunk::cells_per_chunk; i += 1)
+			{
+				size_t const cell_y = i / world_chunk::cells_per_chunk_sqrt;
+				size_t const cell_x = i % world_chunk::cells_per_chunk_sqrt;
+
+				SDL_FPoint const cell_position =
+				{
+					.x = position.x + static_cast<float>(cell_x * _cell_size.x),
+					.y = position.y + static_cast<float>(cell_y * _cell_size.y),
+				};
+
+				world_chunk::cell const & cell = chunk[i];
+
+				context.render_sheet(_ground_tiles_texture, cell_position,
+				{
+					.columns = world_tile_max,
+					.frame = static_cast<uint16_t>(cell.tile),
+				});
+
+				switch (cell.object)
+				{
+					case world_object_rock:
+					{
+						if (cell.object_health > 0)
+						{
+							auto const rock_variant = [&cell]
+							{
+								switch (cell.tile)
+								{
+									case world_tile_stone:
+									case world_tile_sand: return 1;
+									default: return 0;
+								}
+							};
+
+							context.render_sheet(_rock_textures[rock_variant()], cell_position,
+							{
+								.columns = 6,
+								.frame = static_cast<size_t>(std::floor(6.f * cell.object_health)),
+							});
+						}
+					};
+					break;
+
+					case world_object_tree:
+					{
+						if (cell.object_health > 0)
+						{
+							auto const tree_variant = [&cell]
+							{
+								switch (cell.tile)
+								{
+									case world_tile_stone:
+									case world_tile_snow: return 1;
+									default: return 0;
+								}
+							};
+
+							context.render_sheet(_tree_textures[tree_variant()], cell_position,
+							{
+								.columns = 4,
+								.frame = static_cast<size_t>(std::floor(3.f * cell.object_health)),
+							});
+						}
+					};
+					break;
+
+					case world_object_house:
+					{
+						context.render_sheet(_structures_texture, cell_position, {});
+					};
+					break;
+
+					case world_object_none: break;
+					default: sdl_game::unreachable();
+				}
+
+				if (_is_showing_grid)
+				{
+					context.render_rect_outline(sdl_game::rgb(0.f, 0.f, 1.f), 1.f,
+					{
+						.x = cell_position.x,
+						.y = cell_position.y,
+						.w = _cell_size.x,
+						.h = _cell_size.y,
+					});
+				}
+			}
+
+			if (_is_showing_grid)
+			{
+				context.render_rect_outline(sdl_game::rgb(1.f, 0.f, 0.f), 1.f,
+				{
+					.x = position.x,
+					.y = position.y,
+					.w = _chunk_size.x,
+					.h = _chunk_size.y,
+				});
+			}
+		}
+
+		world_position screen_to_world(sdl_game::app_context const & context, SDL_FPoint const & screen_position) const
+		{
+			using sdl_game::to_fpoint;
+
+			sdl_game::texture_info const renderer_info = context.query_renderer();
+			SDL_FPoint const chunk_size = to_fpoint(world_chunk::cells_per_chunk_sqrt) * _cell_size;
+			SDL_FPoint const screen_midpoint = {renderer_info.width / 2.f, renderer_info.height / 2.f};
+			SDL_FPoint const chunk_position = screen_position - (screen_midpoint - (chunk_size * _camera_position.xy()));
+			SDL_FPoint const absolute_position = (chunk_position + (chunk_size * to_fpoint(_camera_position.chunk()))) / chunk_size;
+			SDL_Point const chunk = sdl_game::to_point({std::floor(absolute_position.x), std::floor(absolute_position.y)});
+
+			return world_position(chunk, absolute_position - to_fpoint(chunk));
+		}
+
+		SDL_FPoint world_to_screen(sdl_game::app_context const & context, world_position const & position) const
+		{
+			SDL_Point const offset_coord = (position.chunk() - _camera_position.chunk());
+			sdl_game::texture_info const render_info = context.query_renderer();
+			SDL_FPoint const chunk_size = sdl_game::to_fpoint(world_chunk::cells_per_chunk_sqrt) * _cell_size;
+
+			return
+			{
+				.x = (chunk_size.x * offset_coord.x) + (render_info.width / 2.f) + (chunk_size.x * (position.xy().x - _camera_position.xy().x)),
+				.y = (chunk_size.y * offset_coord.y) + (render_info.height / 2.f) + (chunk_size.y * (position.xy().y - _camera_position.xy().y)),
+			};
+		}
+	};
+}
+
+int main(int argc, char * argv[])
+{
+	return sdl_game::init<game_loop>(
+	{
+		.title = "Forester",
+		.width = 1280,
+		.height = 720,
+	});
+}

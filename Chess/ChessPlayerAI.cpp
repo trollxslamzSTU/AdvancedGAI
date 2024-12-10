@@ -143,8 +143,9 @@ bool ChessPlayerAI::TakeATurn(SDL_Event e)
 {
 	//TODO: Code your own function - Remove this version after, it is only here to keep the game functioning for testing.
 	GetAllMoveOptions(*mChessBoard, mTeamColour, &moves);
-	bool gameStillActive = MakeAMove(&moves[0], mChessBoard);
-	return gameStillActive;
+	MiniMax(*mChessBoard, mTeamColour, &moves[0]);
+	
+	//return gameStillActive;
 	//-----------------------------------------------------------
 }
 
@@ -152,7 +153,6 @@ bool ChessPlayerAI::TakeATurn(SDL_Event e)
 
 int ChessPlayerAI::MiniMax(Board board, int depth, Move* currentMove)
 {
-
 	return Maximise(board, depth, currentMove, INT_MAX);
 }
 
@@ -160,9 +160,22 @@ int ChessPlayerAI::MiniMax(Board board, int depth, Move* currentMove)
 
 int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int parentLow)
 {
-
 	//TODO
-	return INT_MAX;
+	int value = -INFINITY;
+	vector <Move> tempMoves;
+	int length = tempMoves.size();
+	GetAllMoveOptions(board, mTeamColour, &tempMoves);
+	for (int i = 0; i < length; i++)
+	{
+		Board boardCopy;
+		boardCopy = board;
+		MakeAMove(&tempMoves[i], &boardCopy);
+		
+		value = max(value, Minimise(boardCopy, (depth - 1)));
+	};
+		
+	
+	return value;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -170,7 +183,19 @@ int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int paren
 int ChessPlayerAI::Minimise(Board board, int depth, Move* bestMove, int parentHigh)
 {
 	//TODO
-	return INT_MIN;
+	int value = INFINITY;
+	vector <Move> tempMoves;
+	int length = tempMoves.size();
+	GetAllMoveOptions(board, mOpponentColour, &tempMoves);
+	for (int i = 0; i < length; i++)
+	{
+		Board boardCopy;
+		boardCopy = board;
+		MakeAMove(&tempMoves[i], &boardCopy);
+		value = max(value, MiniMax(board, (depth - 1), ));
+	}
+	
+	return value;
 }
 
 
@@ -199,18 +224,64 @@ void ChessPlayerAI::CropMoves(vector<Move>* moves, unsigned int maxNumberOfMoves
 int ChessPlayerAI::ScoreTheBoard(Board boardToScore)
 {
 	//TODO
-	return 0;
+
+	int OverallTotal = 0;
+	OverallTotal = ScoreBoardPieces(boardToScore) + ScoreBoardPositioning(boardToScore);
+	return OverallTotal;
 }
 
 int ChessPlayerAI::ScoreBoardPieces(Board boardToScore)
 {
 	//TODO
-	return 0;
+	int total = 0;
+
+	for (int x = 0; x < 8; x++)
+	{
+		for (int y = 0; y < 8; y++)
+		{
+			BoardPiece currentPiece = boardToScore.currentLayout[x][y];
+			switch (currentPiece.piece)
+			{
+			case PIECE_PAWN:
+				total = total + kPawnScore;
+				break;
+
+			case PIECE_KNIGHT:
+				total = total + kKnightScore;
+				break;
+
+			case PIECE_BISHOP:
+				total = total + kBishopScore;
+				break;
+
+			case PIECE_ROOK:
+				total = total + kRookScore;
+				break;
+
+			case PIECE_QUEEN:
+				total = total + kQueenScore;
+				break;
+
+			case PIECE_KING:
+				total = total + kQueenScore;
+				break;
+
+			case PIECE_NONE:
+				break;
+
+			default:
+				break;
+			}
+		}
+		return 0;
+	};
 }
 
 int ChessPlayerAI::ScoreBoardPositioning(Board boardToScore)
 {
 	//TODO
+
+
 	return 0;
 }
 

@@ -552,7 +552,7 @@ namespace sdl_game
 		{
 			if (block_type != _CRT_BLOCK && size)
 			{
-				SDL_Log("%zu bytes allocated\n", size);
+				//SDL_Log("%zu bytes allocated\n", size);
 			}
 
 			return TRUE;

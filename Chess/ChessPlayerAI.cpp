@@ -223,8 +223,6 @@ void ChessPlayerAI::CropMoves(vector<Move>* moves, unsigned int maxNumberOfMoves
 
 int ChessPlayerAI::ScoreTheBoard(Board boardToScore)
 {
-	//TODO
-
 	int OverallTotal = 0;
 	OverallTotal = ScoreBoardPieces(boardToScore) + ScoreBoardPositioning(boardToScore);
 	return OverallTotal;
@@ -232,9 +230,7 @@ int ChessPlayerAI::ScoreTheBoard(Board boardToScore)
 
 int ChessPlayerAI::ScoreBoardPieces(Board boardToScore)
 {
-	//TODO
 	int total = 0;
-
 	for (int x = 0; x < 8; x++)
 	{
 		for (int y = 0; y < 8; y++)
@@ -273,16 +269,28 @@ int ChessPlayerAI::ScoreBoardPieces(Board boardToScore)
 				break;
 			}
 		}
-		return 0;
-	};
+	}
+	return total;
 }
 
 int ChessPlayerAI::ScoreBoardPositioning(Board boardToScore)
 {
-	//TODO
-
-
-	return 0;
+	int total = 0;
+	for (int x = 0; x < 8; x++)
+	{
+		for (int y = 0; y < 8; y++)
+		{
+			if ((x == 3 || x == 4) && (y == 3 || y == 4))
+			{
+				BoardPiece currentPiece = boardToScore.currentLayout[x][y];
+				if (currentPiece.piece != PIECE_NONE)
+				{
+					total = total + 5;
+				}
+			}
+		}
+	}
+	return total;
 }
 
 

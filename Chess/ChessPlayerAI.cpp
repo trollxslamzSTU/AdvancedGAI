@@ -161,17 +161,25 @@ int ChessPlayerAI::MiniMax(Board board, int depth, Move* currentMove)
 int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int parentLow)
 {
 	//TODO
+	
+	if (depth == 0 || IsGameOver(board))
+	{
+		return ScoreTheBoard(board);
+	}
+
 	int value = -INFINITY;
 	vector <Move> tempMoves;
 	int length = tempMoves.size();
 	GetAllMoveOptions(board, mTeamColour, &tempMoves);
-	for (int i = 0; i < length; i++)
+
+	for (Move& move : tempMoves)
 	{
 		Board boardCopy;
 		boardCopy = board;
-		MakeAMove(&tempMoves[i], &boardCopy);
+		MakeAMove(&move, &boardCopy);
+		int eval = Maximise(boardCopy, depth - 1, );
+		//value = max(value, Minimise(boardCopy, (depth - 1)));
 		
-		value = max(value, Minimise(boardCopy, (depth - 1)));
 	};
 		
 	
@@ -183,15 +191,22 @@ int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int paren
 int ChessPlayerAI::Minimise(Board board, int depth, Move* bestMove, int parentHigh)
 {
 	//TODO
+	
+	if (depth == 0 || IsGameOver(board))
+	{
+		return ScoreTheBoard(board);
+	}
+
 	int value = INFINITY;
 	vector <Move> tempMoves;
 	int length = tempMoves.size();
 	GetAllMoveOptions(board, mOpponentColour, &tempMoves);
-	for (int i = 0; i < length; i++)
+
+	for (Move& move : tempMoves)
 	{
 		Board boardCopy;
 		boardCopy = board;
-		MakeAMove(&tempMoves[i], &boardCopy);
+		MakeAMove(&move, &boardCopy);
 		value = max(value, MiniMax(board, (depth - 1), ));
 	}
 	
@@ -291,6 +306,22 @@ int ChessPlayerAI::ScoreBoardPositioning(Board boardToScore)
 		}
 	}
 	return total;
+}
+
+
+
+bool ChessPlayerAI::IsGameOver(Board boardToCheck)
+{
+	mInCheck = CheckForCheck(boardToCheck, mTeamColour);
+	if (mInCheck)
+	{
+		if (CheckForCheckmate(boardToCheck, mTeamColour)) return true;	
+	}
+	if (!mInCheck)
+	{
+		if (CheckForStalemate(boardToCheck, mTeamColour)) return true;
+	}
+	return false;
 }
 
 

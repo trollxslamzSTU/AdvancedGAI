@@ -28,6 +28,9 @@ protected:
 	int	 ScoreBoardPieces(Board boardToScore);
 	int  ScoreBoardPositioning(Board boardToScore);
 
+	
+	bool IsGameOver(Board boardToCheck);
+
 private:
 	int* mDepthToSearch;
 	vector<Move> moves;

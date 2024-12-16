@@ -22,6 +22,7 @@ protected:
 	void UnMakeAMove(Move move, Board currentBoard);
 
 	void OrderMoves(Board board, vector<Move>* moves, bool highToLow);
+	void ValueMoves(Board board, vector<Move>* moves);
 	void CropMoves(vector<Move>* moves, unsigned int maxNumberOfMoves);
 
 	int  ScoreTheBoard(Board boardToScore);

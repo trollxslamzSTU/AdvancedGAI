@@ -145,6 +145,8 @@ bool ChessPlayerAI::TakeATurn(SDL_Event e)
 	GetAllMoveOptions(*mChessBoard, mTeamColour, &moves);
 	MiniMax(*mChessBoard, mTeamColour, &moves[0]);
 	
+	return true;
+
 	//return gameStillActive;
 	//-----------------------------------------------------------
 }
@@ -167,9 +169,9 @@ int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int paren
 		return ScoreTheBoard(board);
 	}
 
-	int value = -INFINITY;
-	vector <Move> tempMoves;
-	int length = tempMoves.size();
+	int value = -INT_MIN;
+	vector<Move> tempMoves;
+	//size_t length = tempMoves.size();
 	GetAllMoveOptions(board, mTeamColour, &tempMoves);
 
 	for (Move& move : tempMoves)
@@ -177,7 +179,7 @@ int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int paren
 		Board boardCopy;
 		boardCopy = board;
 		MakeAMove(&move, &boardCopy);
-		int eval = Maximise(boardCopy, depth - 1, );
+		int eval = Maximise(boardCopy, depth - 1, &move,0);
 		//value = max(value, Minimise(boardCopy, (depth - 1)));
 		
 	};
@@ -197,9 +199,9 @@ int ChessPlayerAI::Minimise(Board board, int depth, Move* bestMove, int parentHi
 		return ScoreTheBoard(board);
 	}
 
-	int value = INFINITY;
+	int value = INT_MAX;
 	vector <Move> tempMoves;
-	int length = tempMoves.size();
+	//int length = tempMoves.size();
 	GetAllMoveOptions(board, mOpponentColour, &tempMoves);
 
 	for (Move& move : tempMoves)
@@ -207,7 +209,7 @@ int ChessPlayerAI::Minimise(Board board, int depth, Move* bestMove, int parentHi
 		Board boardCopy;
 		boardCopy = board;
 		MakeAMove(&move, &boardCopy);
-		value = max(value, MiniMax(board, (depth - 1), ));
+		//value = max(value, MiniMax(board, (depth - 1), ));
 	}
 	
 	return value;
@@ -224,7 +226,108 @@ void ChessPlayerAI::UnMakeAMove(Move move, Board currentBoard)
 
 void ChessPlayerAI::OrderMoves(Board board, vector<Move>* moves, bool highToLow)
 {
-	//TODO
+	////TODO
+	ValueMoves(board, moves);
+	if (highToLow)
+	{
+		std::sort(moves->begin(), moves->end(), [](Move a, Move b)
+			{
+				return a.score > b.score;
+			});
+	}
+	else 
+	{
+		std::sort(moves->begin(), moves->end(), [](Move a, Move b)
+			{
+				return a.score < b.score;
+			});
+
+	}
+}
+
+void ChessPlayerAI::ValueMoves(Board board, vector<Move>* moves)
+{
+	for (Move& move : *moves)
+	{
+		BoardPiece piece = board.currentLayout[move.from_X][move.from_Y];
+		int pieceValue = 0;
+		switch (piece.piece)
+		{
+		case PIECE_PAWN:
+			pieceValue = kPawnScore;
+			break;
+
+		case PIECE_KNIGHT:
+			pieceValue = kKnightScore;
+			break;
+
+		case PIECE_BISHOP:
+			pieceValue = kBishopScore;
+			break;
+
+		case PIECE_ROOK:
+			pieceValue = kRookScore;
+			break;
+
+		case PIECE_QUEEN:
+			pieceValue = kQueenScore;
+			break;
+
+		case PIECE_KING:
+			pieceValue = kQueenScore;
+			break;
+
+		case PIECE_NONE:
+			break;
+
+		default:
+			pieceValue = 0;
+			break;
+		}
+		BoardPiece capPiece = board.currentLayout[move.to_X][move.to_Y];
+		if (capPiece.piece != PIECE_NONE)
+		{
+			int capPieceValue = 0;
+			switch (piece.piece)
+			{
+			case PIECE_PAWN:
+				capPieceValue = kPawnScore;
+				break;
+
+			case PIECE_KNIGHT:
+				capPieceValue = kKnightScore;
+				break;
+
+			case PIECE_BISHOP:
+				capPieceValue = kBishopScore;
+				break;
+
+			case PIECE_ROOK:
+				capPieceValue = kRookScore;
+				break;
+
+			case PIECE_QUEEN:
+				capPieceValue = kQueenScore;
+				break;
+
+			case PIECE_KING:
+				capPieceValue = kQueenScore;
+				break;
+
+			case PIECE_NONE:
+				break;
+
+			default:
+				capPieceValue = 0;
+				break;
+			}
+			pieceValue += capPieceValue;
+
+		}
+
+
+		move.score = pieceValue;
+	}
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -298,9 +401,13 @@ int ChessPlayerAI::ScoreBoardPositioning(Board boardToScore)
 			if ((x == 3 || x == 4) && (y == 3 || y == 4))
 			{
 				BoardPiece currentPiece = boardToScore.currentLayout[x][y];
-				if (currentPiece.piece != PIECE_NONE)
+				if (currentPiece.piece != PIECE_NONE && currentPiece.colour == mTeamColour)
 				{
 					total = total + 5;
+				}
+				if (currentPiece.piece != PIECE_NONE && currentPiece.colour == mOpponentColour)
+				{
+					total = total - 5;
 				}
 			}
 		}

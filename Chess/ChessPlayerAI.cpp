@@ -143,11 +143,13 @@ bool ChessPlayerAI::TakeATurn(SDL_Event e)
 {
 	//TODO: Code your own function - Remove this version after, it is only here to keep the game functioning for testing.
 	GetAllMoveOptions(*mChessBoard, mTeamColour, &moves);
-	MiniMax(*mChessBoard, mTeamColour, &moves[0]);
+	Move* bestCurrentMove = &moves[0];
+	MiniMax(*mChessBoard, *mDepthToSearch, bestCurrentMove);
 	
-	return true;
+	MakeAMove(bestCurrentMove, mChessBoard);
+	bool gameStillActive = true;
 
-	//return gameStillActive;
+	return gameStillActive;
 	//-----------------------------------------------------------
 }
 
@@ -171,7 +173,6 @@ int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int paren
 
 	int value = -INT_MIN;
 	vector<Move> tempMoves;
-	//size_t length = tempMoves.size();
 	GetAllMoveOptions(board, mTeamColour, &tempMoves);
 
 	for (Move& move : tempMoves)
@@ -179,8 +180,15 @@ int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int paren
 		Board boardCopy;
 		boardCopy = board;
 		MakeAMove(&move, &boardCopy);
-		int eval = Maximise(boardCopy, depth - 1, &move,0);
-		//value = max(value, Minimise(boardCopy, (depth - 1)));
+		int maxEval = Maximise(boardCopy, depth - 1, &move, value);
+		if (maxEval > value)
+		{
+			value = maxEval;
+			if (depth == *mDepthToSearch)
+			{
+				*mBestMove = move;
+			}
+		}
 		
 	};
 		
@@ -201,7 +209,6 @@ int ChessPlayerAI::Minimise(Board board, int depth, Move* bestMove, int parentHi
 
 	int value = INT_MAX;
 	vector <Move> tempMoves;
-	//int length = tempMoves.size();
 	GetAllMoveOptions(board, mOpponentColour, &tempMoves);
 
 	for (Move& move : tempMoves)
@@ -209,7 +216,15 @@ int ChessPlayerAI::Minimise(Board board, int depth, Move* bestMove, int parentHi
 		Board boardCopy;
 		boardCopy = board;
 		MakeAMove(&move, &boardCopy);
-		//value = max(value, MiniMax(board, (depth - 1), ));
+		int minEval = Maximise(boardCopy, depth - 1, bestMove, value);
+		if (minEval < value)
+		{
+			minEval = value;
+			if (depth == *mDepthToSearch)
+			{
+				*bestMove = move;
+			}
+		}
 	}
 	
 	return value;

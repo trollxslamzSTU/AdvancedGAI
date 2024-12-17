@@ -143,11 +143,9 @@ bool ChessPlayerAI::TakeATurn(SDL_Event e)
 {
 	//TODO: Code your own function - Remove this version after, it is only here to keep the game functioning for testing.
 	GetAllMoveOptions(*mChessBoard, mTeamColour, &moves);
-	Move* bestCurrentMove = &moves[0];
-	MiniMax(*mChessBoard, *mDepthToSearch, bestCurrentMove);
-	
-	MakeAMove(bestCurrentMove, mChessBoard);
-	bool gameStillActive = true;
+	OrderMoves(*mChessBoard, &moves, true);
+	MiniMax(*mChessBoard, *mDepthToSearch, moves.data());
+	bool gameStillActive = MakeAMove(&mBestMove, mChessBoard);
 
 	return gameStillActive;
 	//-----------------------------------------------------------
@@ -171,7 +169,7 @@ int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int paren
 		return ScoreTheBoard(board);
 	}
 
-	int value = -INT_MIN;
+	int max = -INT_MIN;
 	vector<Move> tempMoves;
 	GetAllMoveOptions(board, mTeamColour, &tempMoves);
 
@@ -180,20 +178,20 @@ int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int paren
 		Board boardCopy;
 		boardCopy = board;
 		MakeAMove(&move, &boardCopy);
-		int maxEval = Maximise(boardCopy, depth - 1, &move, value);
-		if (maxEval > value)
+		int maxEval = Minimise(boardCopy, depth - 1, currentMove, max);
+		if (maxEval > max)
 		{
-			value = maxEval;
+			max = maxEval;
 			if (depth == *mDepthToSearch)
 			{
-				*mBestMove = move;
+				mBestMove = move;
 			}
 		}
 		
 	};
 		
 	
-	return value;
+	return max;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -207,7 +205,7 @@ int ChessPlayerAI::Minimise(Board board, int depth, Move* bestMove, int parentHi
 		return ScoreTheBoard(board);
 	}
 
-	int value = INT_MAX;
+	int min = INT_MAX;
 	vector <Move> tempMoves;
 	GetAllMoveOptions(board, mOpponentColour, &tempMoves);
 
@@ -216,18 +214,18 @@ int ChessPlayerAI::Minimise(Board board, int depth, Move* bestMove, int parentHi
 		Board boardCopy;
 		boardCopy = board;
 		MakeAMove(&move, &boardCopy);
-		int minEval = Maximise(boardCopy, depth - 1, bestMove, value);
-		if (minEval < value)
+		int minEval = Maximise(boardCopy, depth - 1, bestMove, min);
+		if (minEval < min)
 		{
-			minEval = value;
+			min = minEval;
 			if (depth == *mDepthToSearch)
 			{
-				*bestMove = move;
+				mBestMove = move;
 			}
 		}
 	}
 	
-	return value;
+	return min;
 }
 
 
@@ -269,27 +267,27 @@ void ChessPlayerAI::ValueMoves(Board board, vector<Move>* moves)
 		switch (piece.piece)
 		{
 		case PIECE_PAWN:
-			pieceValue = kPawnScore;
+			pieceValue = kPawnScore / 5;
 			break;
 
 		case PIECE_KNIGHT:
-			pieceValue = kKnightScore;
+			pieceValue = kKnightScore / 5;
 			break;
 
 		case PIECE_BISHOP:
-			pieceValue = kBishopScore;
+			pieceValue = kBishopScore / 5;
 			break;
 
 		case PIECE_ROOK:
-			pieceValue = kRookScore;
+			pieceValue = kRookScore / 5;
 			break;
 
 		case PIECE_QUEEN:
-			pieceValue = kQueenScore;
+			pieceValue = kQueenScore / 5;
 			break;
 
 		case PIECE_KING:
-			pieceValue = kQueenScore;
+			pieceValue = kQueenScore / 5;
 			break;
 
 		case PIECE_NONE:
@@ -306,27 +304,27 @@ void ChessPlayerAI::ValueMoves(Board board, vector<Move>* moves)
 			switch (piece.piece)
 			{
 			case PIECE_PAWN:
-				capPieceValue = kPawnScore;
+				capPieceValue = kPawnScore / 5;
 				break;
 
 			case PIECE_KNIGHT:
-				capPieceValue = kKnightScore;
+				capPieceValue = kKnightScore / 5;
 				break;
 
 			case PIECE_BISHOP:
-				capPieceValue = kBishopScore;
+				capPieceValue = kBishopScore / 5;
 				break;
 
 			case PIECE_ROOK:
-				capPieceValue = kRookScore;
+				capPieceValue = kRookScore / 5;
 				break;
 
 			case PIECE_QUEEN:
-				capPieceValue = kQueenScore;
+				capPieceValue = kQueenScore / 5;
 				break;
 
 			case PIECE_KING:
-				capPieceValue = kQueenScore;
+				capPieceValue = kQueenScore / 5;
 				break;
 
 			case PIECE_NONE:
@@ -372,27 +370,75 @@ int ChessPlayerAI::ScoreBoardPieces(Board boardToScore)
 			switch (currentPiece.piece)
 			{
 			case PIECE_PAWN:
-				total = total + kPawnScore;
+				if (currentPiece.colour == mTeamColour)
+				{
+					total = total + kPawnScore;
+				}
+				else
+				{
+					total = total - kPawnScore;
+				}
+
 				break;
 
 			case PIECE_KNIGHT:
-				total = total + kKnightScore;
+				if (currentPiece.colour == mTeamColour)
+				{
+					total = total + kKnightScore;
+				}
+				else
+				{
+					total = total - kKnightScore;
+				}
+					
 				break;
 
 			case PIECE_BISHOP:
-				total = total + kBishopScore;
+				if (currentPiece.colour == mTeamColour)
+				{
+					total = total + kBishopScore;
+				}
+				else
+				{
+					total = total - kBishopScore;
+				}
+
 				break;
 
 			case PIECE_ROOK:
-				total = total + kRookScore;
+				if (currentPiece.colour == mTeamColour)
+				{
+					total = total + kRookScore;
+				}
+				else
+				{
+					total = total - kRookScore;
+				}
+
 				break;
 
 			case PIECE_QUEEN:
-				total = total + kQueenScore;
+				if (currentPiece.colour == mTeamColour)
+				{
+					total = total + kQueenScore;
+				}
+				else
+				{
+					total = total - kQueenScore;
+				}
+
 				break;
 
 			case PIECE_KING:
-				total = total + kQueenScore;
+				if (currentPiece.colour == mTeamColour)
+				{
+					total = total + kKingScore;
+				}
+				else
+				{
+					total = total - kKingScore;
+				}
+
 				break;
 
 			case PIECE_NONE:
@@ -418,11 +464,11 @@ int ChessPlayerAI::ScoreBoardPositioning(Board boardToScore)
 				BoardPiece currentPiece = boardToScore.currentLayout[x][y];
 				if (currentPiece.piece != PIECE_NONE && currentPiece.colour == mTeamColour)
 				{
-					total = total + 5;
+					total = total + 100;
 				}
 				if (currentPiece.piece != PIECE_NONE && currentPiece.colour == mOpponentColour)
 				{
-					total = total - 5;
+					total = total - 100;
 				}
 			}
 		}

@@ -35,7 +35,7 @@ protected:
 private:
 	int* mDepthToSearch;
 	vector<Move> moves;
-	Move* mBestMove;
+	Move mBestMove;
 
 	COLOUR mOpponentColour;
 };

@@ -16,8 +16,8 @@ public:
 //--------------------------------------------------------------------------------------------------
 protected:
 	int  MiniMax(Board board, int depth, Move* bestMove);
-	int  Maximise(Board board, int depth, Move* bestMove, int alphaBeta);
-	int  Minimise(Board board, int depth, Move* bestMove, int alphaBeta);
+	int  Maximise(Board board, int depth, Move* bestMove, int alpha, int beta);
+	int  Minimise(Board board, int depth, Move* bestMove, int alpha, int beta);
 	bool MakeAMove(Move* move, Board* board);
 	void UnMakeAMove(Move move, Board currentBoard);
 

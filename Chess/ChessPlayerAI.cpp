@@ -143,7 +143,7 @@ bool ChessPlayerAI::TakeATurn(SDL_Event e)
 {
 	//TODO: Code your own function - Remove this version after, it is only here to keep the game functioning for testing.
 	GetAllMoveOptions(*mChessBoard, mTeamColour, &moves);
-	OrderMoves(*mChessBoard, &moves, true);
+	//OrderMoves(*mChessBoard, &moves, true);
 	MiniMax(*mChessBoard, *mDepthToSearch, moves.data());
 	bool gameStillActive = MakeAMove(&mBestMove, mChessBoard);
 
@@ -155,12 +155,12 @@ bool ChessPlayerAI::TakeATurn(SDL_Event e)
 
 int ChessPlayerAI::MiniMax(Board board, int depth, Move* currentMove)
 {
-	return Maximise(board, depth, currentMove, INT_MAX);
+	return Maximise(board, depth, currentMove, -INT_MAX, INT_MAX);
 }
 
 //--------------------------------------------------------------------------------------------------
 
-int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int parentLow)
+int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int alpha, int beta)
 {
 	//TODO
 	
@@ -170,33 +170,36 @@ int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int paren
 	}
 
 	int max = -INT_MIN;
+	
 	vector<Move> tempMoves;
 	GetAllMoveOptions(board, mTeamColour, &tempMoves);
-
+	OrderMoves(board, &tempMoves, true);
 	for (Move& move : tempMoves)
 	{
 		Board boardCopy;
 		boardCopy = board;
 		MakeAMove(&move, &boardCopy);
-		int maxEval = Minimise(boardCopy, depth - 1, currentMove, max);
+		int maxEval = Minimise(boardCopy, depth - 1, currentMove, alpha, beta);
 		if (maxEval > max)
 		{
-			max = maxEval;
+			max = alpha;
+			if (maxEval > alpha)
+			{
+				alpha = maxEval;
+			}
 			if (depth == *mDepthToSearch)
 			{
 				mBestMove = move;
 			}
 		}
-		
-	};
-		
-	
+		if (maxEval >= beta) return maxEval;
+	}
 	return max;
 }
 
 //--------------------------------------------------------------------------------------------------
 
-int ChessPlayerAI::Minimise(Board board, int depth, Move* bestMove, int parentHigh)
+int ChessPlayerAI::Minimise(Board board, int depth, Move* bestMove, int alpha , int beta)
 {
 	//TODO
 	
@@ -206,25 +209,30 @@ int ChessPlayerAI::Minimise(Board board, int depth, Move* bestMove, int parentHi
 	}
 
 	int min = INT_MAX;
+	
 	vector <Move> tempMoves;
 	GetAllMoveOptions(board, mOpponentColour, &tempMoves);
-
+	OrderMoves(board, &tempMoves, false);
 	for (Move& move : tempMoves)
 	{
 		Board boardCopy;
 		boardCopy = board;
 		MakeAMove(&move, &boardCopy);
-		int minEval = Maximise(boardCopy, depth - 1, bestMove, min);
+		int minEval = Maximise(boardCopy, depth - 1, bestMove, alpha, beta);
 		if (minEval < min)
 		{
 			min = minEval;
+			if (minEval < beta)
+			{
+				beta = minEval;
+			}
 			if (depth == *mDepthToSearch)
 			{
 				mBestMove = move;
 			}
 		}
+		if (minEval <= alpha) return minEval;	
 	}
-	
 	return min;
 }
 

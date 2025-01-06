@@ -33,7 +33,7 @@ const int kPreTurnTextWidth					= 240;
 const int kPreTurnTextHeight				= 52;
 
 //Search depth in MiniMax Algorithm.
-const unsigned int kSearchDepth				= 3;
+const unsigned int kSearchDepth				= 4;
 
 //Cut the number of moves down per ply.
 //This will be multiplied by current depth.

@@ -17,11 +17,11 @@ using namespace::std;
 //TODO
 //Change these values as you see fit, add or remove values
 
-const int kPawnScore		= 100;
-const int kKnightScore		= 320;
-const int kBishopScore		= 330;
-const int kRookScore		= 500;
-const int kQueenScore		= 900;
+const int kPawnScore		= 200;
+const int kKnightScore		= 400;
+const int kBishopScore		= 500;
+const int kRookScore		= 600;
+const int kQueenScore		= 1000;
 const int kKingScore		= 20000;
 
 const int kCheckScore		= 1;
@@ -31,6 +31,9 @@ const int kStalemateScore	= 1;	//Tricky one because sometimes you want this, som
 const int kPieceWeight		= 1; //Scores as above.
 const int kMoveWeight		= 1; //Number of moves available to pieces.
 const int kPositionalWeight	= 1; //Whether in CHECK, CHECKMATE or STALEMATE.
+const int kOrderWieght = 3;
+const int kScoreWeight = 2;
+const int kSquareWeight = 125;
 
 //--------------------------------------------------------------------------------------------------
 
@@ -169,11 +172,11 @@ int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int alpha
 		return ScoreTheBoard(board);
 	}
 
-	int max = -INT_MIN;
+	int max = INT_MIN;
 	
 	vector<Move> tempMoves;
 	GetAllMoveOptions(board, mTeamColour, &tempMoves);
-	OrderMoves(board, &tempMoves, true);
+	OrderMoves(board, &tempMoves, false);
 	for (Move& move : tempMoves)
 	{
 		Board boardCopy;
@@ -205,14 +208,14 @@ int ChessPlayerAI::Minimise(Board board, int depth, Move* bestMove, int alpha , 
 	
 	if (depth == 0 || IsGameOver(board))
 	{
-		return ScoreTheBoard(board);
+		return ScoreTheBoard(board) * -1;
 	}
 
 	int min = INT_MAX;
 	
 	vector <Move> tempMoves;
 	GetAllMoveOptions(board, mOpponentColour, &tempMoves);
-	OrderMoves(board, &tempMoves, false);
+	OrderMoves(board, &tempMoves, true);
 	for (Move& move : tempMoves)
 	{
 		Board boardCopy;
@@ -275,27 +278,27 @@ void ChessPlayerAI::ValueMoves(Board board, vector<Move>* moves)
 		switch (piece.piece)
 		{
 		case PIECE_PAWN:
-			pieceValue = kPawnScore / 5;
+			pieceValue = kPawnScore / kOrderWieght;
 			break;
 
 		case PIECE_KNIGHT:
-			pieceValue = kKnightScore / 5;
+			pieceValue = kKnightScore / kOrderWieght;
 			break;
 
 		case PIECE_BISHOP:
-			pieceValue = kBishopScore / 5;
+			pieceValue = kBishopScore / kOrderWieght;
 			break;
 
 		case PIECE_ROOK:
-			pieceValue = kRookScore / 5;
+			pieceValue = kRookScore / kOrderWieght;
 			break;
 
 		case PIECE_QUEEN:
-			pieceValue = kQueenScore / 5;
+			pieceValue = kQueenScore / kOrderWieght;
 			break;
 
 		case PIECE_KING:
-			pieceValue = kQueenScore / 5;
+			pieceValue = kQueenScore / kOrderWieght;
 			break;
 
 		case PIECE_NONE:
@@ -312,27 +315,27 @@ void ChessPlayerAI::ValueMoves(Board board, vector<Move>* moves)
 			switch (piece.piece)
 			{
 			case PIECE_PAWN:
-				capPieceValue = kPawnScore / 5;
+				capPieceValue = kPawnScore / kOrderWieght;
 				break;
 
 			case PIECE_KNIGHT:
-				capPieceValue = kKnightScore / 5;
+				capPieceValue = kKnightScore / kOrderWieght;
 				break;
 
 			case PIECE_BISHOP:
-				capPieceValue = kBishopScore / 5;
+				capPieceValue = kBishopScore / kOrderWieght;
 				break;
 
 			case PIECE_ROOK:
-				capPieceValue = kRookScore / 5;
+				capPieceValue = kRookScore / kOrderWieght;
 				break;
 
 			case PIECE_QUEEN:
-				capPieceValue = kQueenScore / 5;
+				capPieceValue = kQueenScore / kOrderWieght;
 				break;
 
 			case PIECE_KING:
-				capPieceValue = kQueenScore / 5;
+				capPieceValue = kQueenScore / kOrderWieght;
 				break;
 
 			case PIECE_NONE:
@@ -380,11 +383,11 @@ int ChessPlayerAI::ScoreBoardPieces(Board boardToScore)
 			case PIECE_PAWN:
 				if (currentPiece.colour == mTeamColour)
 				{
-					total = total + kPawnScore;
+					total = total + kPawnScore * kScoreWeight;
 				}
 				else
 				{
-					total = total - kPawnScore;
+					total = total - kPawnScore * kScoreWeight;
 				}
 
 				break;
@@ -392,11 +395,11 @@ int ChessPlayerAI::ScoreBoardPieces(Board boardToScore)
 			case PIECE_KNIGHT:
 				if (currentPiece.colour == mTeamColour)
 				{
-					total = total + kKnightScore;
+					total = total + kKnightScore * kScoreWeight;
 				}
 				else
 				{
-					total = total - kKnightScore;
+					total = total - kKnightScore * kScoreWeight;
 				}
 					
 				break;
@@ -404,11 +407,11 @@ int ChessPlayerAI::ScoreBoardPieces(Board boardToScore)
 			case PIECE_BISHOP:
 				if (currentPiece.colour == mTeamColour)
 				{
-					total = total + kBishopScore;
+					total = total + kBishopScore * kScoreWeight;
 				}
 				else
 				{
-					total = total - kBishopScore;
+					total = total - kBishopScore * kScoreWeight;
 				}
 
 				break;
@@ -416,11 +419,11 @@ int ChessPlayerAI::ScoreBoardPieces(Board boardToScore)
 			case PIECE_ROOK:
 				if (currentPiece.colour == mTeamColour)
 				{
-					total = total + kRookScore;
+					total = total + kRookScore * kScoreWeight;
 				}
 				else
 				{
-					total = total - kRookScore;
+					total = total - kRookScore * kScoreWeight;
 				}
 
 				break;
@@ -428,11 +431,11 @@ int ChessPlayerAI::ScoreBoardPieces(Board boardToScore)
 			case PIECE_QUEEN:
 				if (currentPiece.colour == mTeamColour)
 				{
-					total = total + kQueenScore;
+					total = total + kQueenScore * kScoreWeight;
 				}
 				else
 				{
-					total = total - kQueenScore;
+					total = total - kQueenScore * kScoreWeight;
 				}
 
 				break;
@@ -440,11 +443,11 @@ int ChessPlayerAI::ScoreBoardPieces(Board boardToScore)
 			case PIECE_KING:
 				if (currentPiece.colour == mTeamColour)
 				{
-					total = total + kKingScore;
+					total = total + kKingScore * kScoreWeight;
 				}
 				else
 				{
-					total = total - kKingScore;
+					total = total - kKingScore * kScoreWeight;
 				}
 
 				break;
@@ -467,16 +470,16 @@ int ChessPlayerAI::ScoreBoardPositioning(Board boardToScore)
 	{
 		for (int y = 0; y < 8; y++)
 		{
-			if ((x == 3 || x == 4) && (y == 3 || y == 4))
+			if (x == 3 || x == 4)
 			{
 				BoardPiece currentPiece = boardToScore.currentLayout[x][y];
 				if (currentPiece.piece != PIECE_NONE && currentPiece.colour == mTeamColour)
 				{
-					total = total + 100;
+					total = total + kSquareWeight;
 				}
 				if (currentPiece.piece != PIECE_NONE && currentPiece.colour == mOpponentColour)
 				{
-					total = total - 100;
+					total = total - kSquareWeight;
 				}
 			}
 		}
@@ -501,4 +504,4 @@ bool ChessPlayerAI::IsGameOver(Board boardToCheck)
 }
 
 
-//--------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------//

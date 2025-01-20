@@ -271,48 +271,15 @@ void ChessPlayerAI::OrderMoves(Board board, vector<Move>* moves, bool highToLow)
 
 void ChessPlayerAI::ValueMoves(Board board, vector<Move>* moves)
 {
+	int moveValue;
+	moveValue = 0;
 	for (Move& move : *moves)
-	{
-		BoardPiece piece = board.currentLayout[move.from_X][move.from_Y];
-		int pieceValue = 0;
-		switch (piece.piece)
-		{
-		case PIECE_PAWN:
-			pieceValue = kPawnScore / kOrderWieght;
-			break;
-
-		case PIECE_KNIGHT:
-			pieceValue = kKnightScore / kOrderWieght;
-			break;
-
-		case PIECE_BISHOP:
-			pieceValue = kBishopScore / kOrderWieght;
-			break;
-
-		case PIECE_ROOK:
-			pieceValue = kRookScore / kOrderWieght;
-			break;
-
-		case PIECE_QUEEN:
-			pieceValue = kQueenScore / kOrderWieght;
-			break;
-
-		case PIECE_KING:
-			pieceValue = kQueenScore / kOrderWieght;
-			break;
-
-		case PIECE_NONE:
-			break;
-
-		default:
-			pieceValue = 0;
-			break;
-		}
+	{	
 		BoardPiece capPiece = board.currentLayout[move.to_X][move.to_Y];
 		if (capPiece.piece != PIECE_NONE)
 		{
 			int capPieceValue = 0;
-			switch (piece.piece)
+			switch (capPiece.piece)
 			{
 			case PIECE_PAWN:
 				capPieceValue = kPawnScore / kOrderWieght;
@@ -345,12 +312,48 @@ void ChessPlayerAI::ValueMoves(Board board, vector<Move>* moves)
 				capPieceValue = 0;
 				break;
 			}
-			pieceValue += capPieceValue;
-
+			moveValue += capPieceValue;
 		}
+		BoardPiece piece = board.currentLayout[move.from_X][move.from_Y];
+		if (piece.piece != PIECE_NONE)
+		{
+			int pieceValue = 0;
+			switch (piece.piece)
+			{
+			case PIECE_PAWN:
+				pieceValue = kPawnScore / kOrderWieght;
+				break;
 
+			case PIECE_KNIGHT:
+				pieceValue = kKnightScore / kOrderWieght;
+				break;
 
-		move.score = pieceValue;
+			case PIECE_BISHOP:
+				pieceValue = kBishopScore / kOrderWieght;
+				break;
+
+			case PIECE_ROOK:
+				pieceValue = kRookScore / kOrderWieght;
+				break;
+
+			case PIECE_QUEEN:
+				pieceValue = kQueenScore / kOrderWieght;
+				break;
+
+			case PIECE_KING:
+				pieceValue = kQueenScore / kOrderWieght;
+				break;
+
+			case PIECE_NONE:
+				break;
+
+			default:
+				pieceValue = 0;
+				break;
+			}
+			moveValue += pieceValue;
+		}
+		move.score = moveValue;
 	}
 }
 

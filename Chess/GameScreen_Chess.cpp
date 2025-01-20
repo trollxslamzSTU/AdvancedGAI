@@ -52,7 +52,7 @@ GameScreen_Chess::GameScreen_Chess(sdl_game::app_context & context)
 	mSearchDepth			= new int;
 	*mSearchDepth			= kSearchDepth;
 	mSelectedPiecePosition  = SDL_Point();
-	mPlayers[COLOUR_WHITE]	= new ChessPlayer(context, COLOUR_WHITE, mChessBoard, &mHighlightPositions, &mSelectedPiecePosition, mLastMove); //HUMAN PLAYER
+	mPlayers[COLOUR_WHITE]	= new ChessPlayerAI(context, COLOUR_WHITE, mChessBoard, &mHighlightPositions, &mSelectedPiecePosition, mLastMove, mSearchDepth); //HUMAN PLAYER
 	mPlayers[COLOUR_BLACK]	= new ChessPlayerAI(context, COLOUR_BLACK, mChessBoard, &mHighlightPositions, &mSelectedPiecePosition, mLastMove, mSearchDepth); //AI PLAYER
 	//mAIPlayerPlaying		= false;
 	//mPlayers[COLOUR_WHITE]	= new ChessPlayerAI(renderer, COLOUR_WHITE, mChessBoard, &mHighlightPositions, &mSelectedPiecePosition, mLastMove, mSearchDepth); //AI PLAYER

@@ -10,9 +10,21 @@ size_t world_coordinate::hash::operator()(world_coordinate const & coordinate) c
 	return chunk_hash ^ (xy_hash << 1);
 }
 
-world_coordinate::world_coordinate(world_position const & position) : _chunk(position.chunk()), _xy(
-	static_cast<uint32_t>(position.x() * (world_chunk::cells_per_chunk_sqrt - 1)),
-	static_cast<uint32_t>(position.y() * (world_chunk::cells_per_chunk_sqrt - 1))) {}
+world_coordinate::world_coordinate(world_position const& position) : _chunk(position.chunk())
+{
+	SDL_FPoint coordinate = position.xy();
+
+
+	coordinate.x *= world_chunk::cells_per_chunk_sqrt;
+	coordinate.y *= world_chunk::cells_per_chunk_sqrt;
+
+
+	coordinate.x = std::floor(coordinate.x);
+	coordinate.y = std::floor(coordinate.y);
+
+
+	_xy = { static_cast<uint32_t>(coordinate.x), static_cast<uint32_t>(coordinate.y) };
+}
 
 world_coordinate world_coordinate::with_offset(SDL_Point const & offset) const
 {

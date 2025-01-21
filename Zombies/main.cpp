@@ -361,8 +361,11 @@ namespace
 
 			for (zombie_actor & zombie : _zombies)
 			{
+				
 				zombie.damage_flash.tick();
 				// TODO: Implement your zombie "squad" behavior.
+				
+
 			}
 
 			if (_player_gun && context.mouse_buttons().is_pressed(SDL_BUTTON_LEFT))

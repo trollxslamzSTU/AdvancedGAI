@@ -275,6 +275,7 @@ void ChessPlayerAI::ValueMoves(Board board, vector<Move>* moves)
 	moveValue = 0;
 	for (Move& move : *moves)
 	{	
+		
 		BoardPiece capPiece = board.currentLayout[move.to_X][move.to_Y];
 		if (capPiece.piece != PIECE_NONE)
 		{

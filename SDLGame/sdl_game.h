@@ -27,7 +27,7 @@ namespace std
 {
 	template<> struct hash<SDL_Point>
 	{
-		size_t operator()(SDL_Point const & value) const
+		size_t operator()(SDL_Point const& value) const
 		{
 			size_t const hash_x = std::hash<int>()(value.x);
 			size_t const hash_y = std::hash<int>()(value.y);
@@ -44,44 +44,44 @@ namespace sdl_game
 	template<typename T> concept point_type = any_of<T, SDL_Point, SDL_FPoint>;
 }
 
-template<sdl_game::point_type A, sdl_game::point_type B> inline bool operator==(A const & a, B const & b)
+template<sdl_game::point_type A, sdl_game::point_type B> inline bool operator==(A const& a, B const& b)
 {
 	return a.x == b.x && a.y == b.y;
 }
 
-template<sdl_game::point_type P> inline P operator+(P const & a, P const & b)
+template<sdl_game::point_type P> inline P operator+(P const& a, P const& b)
 {
-	return {a.x + b.x, a.y + b.y};
+	return { a.x + b.x, a.y + b.y };
 }
 
-template<sdl_game::point_type P> inline P operator-(P const & a, P const & b)
+template<sdl_game::point_type P> inline P operator-(P const& a, P const& b)
 {
-	return {a.x - b.x, a.y - b.y};
+	return { a.x - b.x, a.y - b.y };
 }
 
-template<sdl_game::point_type P> inline P operator*(P const & a, P const & b)
+template<sdl_game::point_type P> inline P operator*(P const& a, P const& b)
 {
-	return {a.x * b.x, a.y * b.y};
+	return { a.x * b.x, a.y * b.y };
 }
 
-template<sdl_game::point_type P> inline P operator/(P const & a, P const & b)
+template<sdl_game::point_type P> inline P operator/(P const& a, P const& b)
 {
-	return {a.x / b.x, a.y / b.y};
+	return { a.x / b.x, a.y / b.y };
 }
 
-template<sdl_game::point_type P> inline P operator%(P const & a, P const & b)
+template<sdl_game::point_type P> inline P operator%(P const& a, P const& b)
 {
-	return {a.x % b.x, a.y % b.y};
+	return { a.x % b.x, a.y % b.y };
 }
 
-template<sdl_game::point_type P> inline SDL_FPoint operator-(P const & a)
+template<sdl_game::point_type P> inline SDL_FPoint operator-(P const& a)
 {
-	return {-a.x, -a.y};
+	return { -a.x, -a.y };
 }
 
 namespace sdl_game
 {
-	constexpr inline SDL_FPoint to_fpoint(float const & scalar)
+	constexpr inline SDL_FPoint to_fpoint(float const& scalar)
 	{
 		return
 		{
@@ -90,7 +90,7 @@ namespace sdl_game
 		};
 	}
 
-	constexpr inline SDL_FPoint to_fpoint(SDL_Point const & point)
+	constexpr inline SDL_FPoint to_fpoint(SDL_Point const& point)
 	{
 		return
 		{
@@ -108,7 +108,7 @@ namespace sdl_game
 		};
 	}
 
-	constexpr inline SDL_Point to_point(int const & scalar)
+	constexpr inline SDL_Point to_point(int const& scalar)
 	{
 		return
 		{
@@ -150,7 +150,7 @@ namespace sdl_game
 		auto const value = static_cast<uint8_t>(UINT8_MAX * intensity);
 		auto const alpha_value = static_cast<uint8_t>(UINT8_MAX * alpha_intensity);
 
-		return {value, value, value, alpha_value};
+		return { value, value, value, alpha_value };
 	}
 
 	inline constexpr SDL_Color rgb(float r_intensity, float g_intensity, float b_intensity)
@@ -159,12 +159,12 @@ namespace sdl_game
 		auto const g_value = static_cast<uint8_t>(UINT8_MAX * g_intensity);
 		auto const b_value = static_cast<uint8_t>(UINT8_MAX * b_intensity);
 
-		return {r_value, g_value, b_value, UINT8_MAX};
+		return { r_value, g_value, b_value, UINT8_MAX };
 	}
 
 	struct app_info final
 	{
-		char const * title = nullptr;
+		char const* title = nullptr;
 
 		uint16_t width = 1280;
 
@@ -206,7 +206,7 @@ namespace sdl_game
 
 		size_t line_count = 0;
 
-		static text_metrics measure_text(sprite_font const & font, std::string_view const & text);
+		static text_metrics measure_text(sprite_font const& font, std::string_view const& text);
 	};
 
 	struct texture_info
@@ -222,22 +222,22 @@ namespace sdl_game
 			_released.reset();
 		}
 
-		bool is_held(E const & element) const
+		bool is_held(E const& element) const
 		{
 			return _held[element];
 		}
 
-		bool is_pressed(E const & element) const
+		bool is_pressed(E const& element) const
 		{
 			return _pressed[element];
 		}
 
-		bool is_released(E const & element) const
+		bool is_released(E const& element) const
 		{
 			return _released[element];
 		}
 
-		void set(E const & element, bool const & state)
+		void set(E const& element, bool const& state)
 		{
 			_held.set(element, state);
 
@@ -251,7 +251,7 @@ namespace sdl_game
 			}
 		}
 
-		private:
+	private:
 		using bitset = std::bitset<max>;
 
 		bitset _held = {};
@@ -261,7 +261,7 @@ namespace sdl_game
 		bitset _released = {};
 	};
 
-	template<point_type P> inline float point_distance_squared(P const & a, P const & b)
+	template<point_type P> inline float point_distance_squared(P const& a, P const& b)
 	{
 		P const to =
 		{
@@ -272,23 +272,23 @@ namespace sdl_game
 		return (to.x * to.x) + (to.y * to.y);
 	}
 
-	template<point_type P> inline float point_distance(P const & a, P const & b)
+	template<point_type P> inline float point_distance(P const& a, P const& b)
 	{
 		return std::sqrt(point_distance_squared(a, b));
 	}
 
-	inline SDL_FPoint projected_point(SDL_FPoint const & origin, float const & angle, float const & distance)
+	inline SDL_FPoint projected_point(SDL_FPoint const& origin, float const& angle, float const& distance)
 	{
 		float const angle_radians = angle * (static_cast<float>(M_PI) / 180.f);
 
 		return
 		{
 			.x = origin.x + (std::cos(angle_radians) * distance),
-   			.y = origin.y + (std::sin(angle_radians) * distance),
+			.y = origin.y + (std::sin(angle_radians) * distance),
 		};
 	}
 
-	inline float angle_difference(float const & from, float const & to)
+	inline float angle_difference(float const& from, float const& to)
 	{
 		constexpr float const tau = static_cast<float>(M_PI * 2 * (180.f / M_PI));
 		float const difference = std::fmod(to - from, tau);
@@ -296,29 +296,105 @@ namespace sdl_game
 		return std::fmod(2.f * difference, tau) - difference;
 	}
 
-	inline float lerped_angle(float const & from, float const & to, float const & weight)
+	inline float lerped_angle(float const& from, float const& to, float const& weight)
 	{
 		return std::fmod(from + (angle_difference(from, to) * weight), 360.f);
 	}
 
 	struct circle_shape final
 	{
-		explicit circle_shape(SDL_FPoint const & origin, float const & radius) : _origin(origin), _radius(radius) {}
+		explicit circle_shape(SDL_FPoint const& origin, float const& radius) : _origin(origin), _radius(radius) {}
 
-		std::optional<SDL_FPoint> has_line_intersection(SDL_FPoint const & p1, SDL_FPoint const & p2) const;
+		std::optional<SDL_FPoint> has_line_intersection(SDL_FPoint const& p1, SDL_FPoint const& p2) const;
 
-		std::optional<SDL_FPoint> has_rect_intersection(SDL_FRect const & rect) const;
+		std::optional<SDL_FPoint> has_rect_intersection(SDL_FRect const& rect) const;
 
-		bool is_circle_intersecting(SDL_FPoint const & origin, float const & radius) const;
+		bool is_circle_intersecting(SDL_FPoint const& origin, float const& radius) const;
 
-		SDL_FPoint const & origin() const { return _origin; }
+		SDL_FPoint const& origin() const { return _origin; }
 
-		float const & radius() const { return _radius; }
+		float const& radius() const { return _radius; }
 
-		private:
+	private:
 		SDL_FPoint _origin = {};
 
 		float _radius = 0;
+	};
+
+	struct aabb_shape final
+	{
+		explicit aabb_shape(SDL_FRect const& rect) : _rect(rect) {}
+
+		std::optional<SDL_FPoint> has_line_intersection(SDL_FPoint const& p1, SDL_FPoint const& p2) const
+		{
+			// We need to find the intersection of the line (p1, p2) with the AABB.
+			float const x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
+			float const rect_left = _rect.x, rect_right = _rect.x + _rect.w;
+			float const rect_top = _rect.y, rect_bottom = _rect.y + _rect.h;
+
+			// Check if the line segment intersects with the edges of the AABB.
+			auto const intersect = [](float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) -> std::optional<SDL_FPoint>
+				{
+					// Line intersection algorithm (can be based on parametric line equations)
+					float denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+					if (denom == 0) return std::nullopt; // Parallel lines
+					float t1 = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+					float t2 = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / denom;
+					if (t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1) {
+						return SDL_FPoint{ x1 + t1 * (x2 - x1), y1 + t1 * (y2 - y1) };
+					}
+					return std::nullopt;
+				};
+
+			// Left edge
+			if (auto result = intersect(x1, y1, x2, y2, rect_left, rect_top, rect_left, rect_bottom)) return result;
+			// Right edge
+			if (auto result = intersect(x1, y1, x2, y2, rect_right, rect_top, rect_right, rect_bottom)) return result;
+			// Top edge
+			if (auto result = intersect(x1, y1, x2, y2, rect_left, rect_top, rect_right, rect_top)) return result;
+			// Bottom edge
+			if (auto result = intersect(x1, y1, x2, y2, rect_left, rect_bottom, rect_right, rect_bottom)) return result;
+
+			return std::nullopt;
+		}
+
+		std::optional<SDL_FPoint> has_rect_intersection(SDL_FRect const& rect) const
+		{
+			float const rect_left = _rect.x, rect_right = _rect.x + _rect.w;
+			float const rect_top = _rect.y, rect_bottom = _rect.y + _rect.h;
+			float const other_left = rect.x, other_right = rect.x + rect.w;
+			float const other_top = rect.y, other_bottom = rect.y + rect.h;
+
+			if (rect_right > other_left && rect_left < other_right && rect_bottom > other_top && rect_top < other_bottom)
+			{
+				float const intersection_x = std::max(rect_left, other_left) + std::min(rect_right, other_right) - std::max(rect_left, other_left);
+				float const intersection_y = std::max(rect_top, other_top) + std::min(rect_bottom, other_bottom) - std::max(rect_top, other_top);
+
+				return SDL_FPoint(intersection_x, intersection_y);
+			}
+
+			return std::nullopt;
+		}
+
+		bool is_circle_intersecting(SDL_FPoint const& origin, float const& radius) const
+		{
+			// Find the closest point on the AABB to the circle's origin
+			float const closestX = std::clamp(origin.x, _rect.x, _rect.x + _rect.w);
+			float const closestY = std::clamp(origin.y, _rect.y, _rect.y + _rect.h);
+
+			// Calculate the distance from the closest point to the origin of the circle
+			float const dx = origin.x - closestX;
+			float const dy = origin.y - closestY;
+			float const distance = std::sqrt(dx * dx + dy * dy);
+
+			// Check if the distance is less than or equal to the circle's radius
+			return distance <= radius;
+		}
+
+		SDL_FRect const& rect() const { return _rect; }
+
+	private:
+		SDL_FRect _rect = {};
 	};
 
 	enum texture_filtering
@@ -379,61 +455,61 @@ namespace sdl_game
 			SDL_Color tint_color = greyscale(1);
 		};
 
-		explicit app_context(SDL_Renderer * renderer) : _renderer(renderer) {}
+		explicit app_context(SDL_Renderer* renderer) : _renderer(renderer) {}
 
 		void clear_frame();
 
-		void consume_event(SDL_Event const & event);
+		void consume_event(SDL_Event const& event);
 
 		bool has_quit() const { return _has_quit; }
 
-		std::shared_ptr<SDL_Texture> load_texture(std::string const & image_path, texture_filtering const & filtering);
+		std::shared_ptr<SDL_Texture> load_texture(std::string const& image_path, texture_filtering const& filtering);
 
-		sprite_font load_sprite_font(std::string const & font_path, uint8_t const & font_size);
+		sprite_font load_sprite_font(std::string const& font_path, uint8_t const& font_size);
 
 		texture_info query_renderer() const;
 
-		texture_info query_texture(std::shared_ptr<SDL_Texture> const & texture) const;
+		texture_info query_texture(std::shared_ptr<SDL_Texture> const& texture) const;
 
 		void quit();
 
-		SDL_Point key_axis(key_axis_mapping const & mapping) const;
+		SDL_Point key_axis(key_axis_mapping const& mapping) const;
 
-		key_button_set const & key_buttons() const { return _key_buttons; }
+		key_button_set const& key_buttons() const { return _key_buttons; }
 
-		mouse_button_set const & mouse_buttons() const { return _mouse_buttons; }
+		mouse_button_set const& mouse_buttons() const { return _mouse_buttons; }
 
-		SDL_FPoint const & mouse_position() const { return _mouse_position; }
+		SDL_FPoint const& mouse_position() const { return _mouse_position; }
 
-		std::mt19937 & randomness() { return _randomness; }
+		std::mt19937& randomness() { return _randomness; }
 
-		void render_atlas(std::shared_ptr<SDL_Texture> const & atlas, SDL_FPoint const & origin, render_atlas_options const & options);
+		void render_atlas(std::shared_ptr<SDL_Texture> const& atlas, SDL_FPoint const& origin, render_atlas_options const& options);
 
-		void render_clear(SDL_Color const & clear_color = greyscale(0));
+		void render_clear(SDL_Color const& clear_color = greyscale(0));
 
-		void render_point(SDL_Color const & point_color, SDL_FPoint const & point);
+		void render_point(SDL_Color const& point_color, SDL_FPoint const& point);
 
-		void render_rect_outline(SDL_Color const & color, float const & width, SDL_FRect const & rect);
+		void render_rect_outline(SDL_Color const& color, float const& width, SDL_FRect const& rect);
 
-		void render_rect_solid(SDL_Color const & color, SDL_FRect const & rect);
+		void render_rect_solid(SDL_Color const& color, SDL_FRect const& rect);
 
-		void render_sheet(std::shared_ptr<SDL_Texture> const & sheet, SDL_FPoint origin, render_sheet_options const & options);
+		void render_sheet(std::shared_ptr<SDL_Texture> const& sheet, SDL_FPoint origin, render_sheet_options const& options);
 
-		void render_sprite(std::shared_ptr<SDL_Texture> const & sprite, SDL_FPoint origin, render_sprite_options const & options);
+		void render_sprite(std::shared_ptr<SDL_Texture> const& sprite, SDL_FPoint origin, render_sprite_options const& options);
 
-		void render_font(sprite_font const & font, SDL_FPoint const & origin, std::string_view const & text, render_font_options const & options);
+		void render_font(sprite_font const& font, SDL_FPoint const& origin, std::string_view const& text, render_font_options const& options);
 
-		void render_line(SDL_Color const & color, SDL_FPoint const & origin, SDL_FPoint const & target);
+		void render_line(SDL_Color const& color, SDL_FPoint const& origin, SDL_FPoint const& target);
 
-		SDL_Renderer * renderer() const
+		SDL_Renderer* renderer() const
 		{
 			return _renderer;
 		}
 
-		void set_render_clip(std::optional<SDL_Rect> const & clip_rect);
+		void set_render_clip(std::optional<SDL_Rect> const& clip_rect);
 
-		private:
-		SDL_Renderer * _renderer = nullptr;
+	private:
+		SDL_Renderer* _renderer = nullptr;
 
 		std::mt19937 _randomness = std::mt19937(std::random_device()());
 
@@ -452,9 +528,9 @@ namespace sdl_game
 
 		countdown() : countdown(0) {}
 
-		explicit countdown(float const & duration_seconds) : _remaining_seconds(duration_seconds) {}
+		explicit countdown(float const& duration_seconds) : _remaining_seconds(duration_seconds) {}
 
-		void reset(float const & duration_seconds);
+		void reset(float const& duration_seconds);
 
 		bool tick();
 
@@ -462,7 +538,7 @@ namespace sdl_game
 
 		bool is_zero() const;
 
-		private:
+	private:
 		float _remaining_seconds = 0;
 	};
 
@@ -491,7 +567,7 @@ namespace sdl_game
 #endif
 
 	template<game_stateable GameState>
-	int init(app_info const & info)
+	int init(app_info const& info)
 	{
 		struct sdl_subsystem_states final
 		{
@@ -529,7 +605,7 @@ namespace sdl_game
 				return _was_img_init;
 			}
 
-			private:
+		private:
 			bool _was_img_init = false;
 		};
 
@@ -544,20 +620,6 @@ namespace sdl_game
 		{
 			return EXIT_FAILURE;
 		}
-
-#if defined(_WIN32) && defined(_DEBUG)
-		AllocConsole();
-
-		_CrtSetAllocHook([](int alloc_type, void * user_data, size_t size, int block_type, long request_number, uint8_t const * file_name, int line_number)
-		{
-			if (block_type != _CRT_BLOCK && size)
-			{
-				//SDL_Log("%zu bytes allocated\n", size);
-			}
-
-			return TRUE;
-		});
-#endif
 
 		constexpr int const window_pos = SDL_WINDOWPOS_CENTERED;
 		constexpr uint32_t const window_flags = SDL_WINDOW_SHOWN;
@@ -576,7 +638,7 @@ namespace sdl_game
 		}
 
 		constexpr uint32_t const renderer_flags = 0;
-		auto const renderer = std::unique_ptr<SDL_Renderer, sdl_deleter>{SDL_CreateRenderer(window.get(), -1, renderer_flags)};
+		auto const renderer = std::unique_ptr<SDL_Renderer, sdl_deleter>{ SDL_CreateRenderer(window.get(), -1, renderer_flags) };
 
 		if (!renderer)
 		{
@@ -585,67 +647,67 @@ namespace sdl_game
 
 		auto context = app_context(renderer.get());
 
-		auto const run_loop = [&](GameState & state)
-		{
-			if (!state.on_ready(context))
+		auto const run_loop = [&](GameState& state)
 			{
-				return EXIT_FAILURE;
-			}
-
-			uint64_t const ticks_initial = SDL_GetTicks64();
-			uint64_t ticks_previous = ticks_initial;
-			float accumulated_time = 0;
-
-			while (true)
-			{
-				SDL_Event event;
-
-				while (SDL_PollEvent(&event) != 0)
+				if (!state.on_ready(context))
 				{
-					context.consume_event(event);
+					return EXIT_FAILURE;
+				}
 
-					if constexpr (requires (GameState state, app_context & context, SDL_Event const & event) { { state.on_event(context, event) } -> std::same_as<void>; })
-					{
-						state.on_event(context, event);
-					}
+				uint64_t const ticks_initial = SDL_GetTicks64();
+				uint64_t ticks_previous = ticks_initial;
+				float accumulated_time = 0;
 
-					if (context.has_quit())
+				while (true)
+				{
+					SDL_Event event;
+
+					while (SDL_PollEvent(&event) != 0)
 					{
-						if constexpr (requires (GameState state) { { state.on_finish() } -> std::same_as<void>; })
+						context.consume_event(event);
+
+						if constexpr (requires (GameState state, app_context & context, SDL_Event const& event) { { state.on_event(context, event) } -> std::same_as<void>; })
 						{
-							state.on_finish();
+							state.on_event(context, event);
 						}
 
-						return EXIT_SUCCESS;
+						if (context.has_quit())
+						{
+							if constexpr (requires (GameState state) { { state.on_finish() } -> std::same_as<void>; })
+							{
+								state.on_finish();
+							}
+
+							return EXIT_SUCCESS;
+						}
 					}
-				}
 
-				constexpr float const milliseconds_per_second = 1000.0;
-				uint64_t const ticks_current = SDL_GetTicks64();
-				float const actual_frame_time = static_cast<float>(ticks_current - ticks_previous) / milliseconds_per_second;
-				auto const delta_time = std::max(info.target_frame_time, actual_frame_time);
+					constexpr float const milliseconds_per_second = 1000.0;
+					uint64_t const ticks_current = SDL_GetTicks64();
+					float const actual_frame_time = static_cast<float>(ticks_current - ticks_previous) / milliseconds_per_second;
+					auto const delta_time = std::max(info.target_frame_time, actual_frame_time);
 
-				ticks_previous = ticks_current;
-				accumulated_time += delta_time;
+					ticks_previous = ticks_current;
+					accumulated_time += delta_time;
 
-				if constexpr (requires (GameState state, app_context const & context) { { state.on_update(context) } -> std::same_as<void>; })
-				{
-					while (accumulated_time >= info.target_frame_time)
+					if constexpr (requires (GameState state, app_context const& context) { { state.on_update(context) } -> std::same_as<void>; })
 					{
-						state.on_update(context);
+						while (accumulated_time >= info.target_frame_time)
+						{
+							state.on_update(context);
 
-						accumulated_time -= info.target_frame_time;
+							accumulated_time -= info.target_frame_time;
+						}
 					}
+
+					state.on_render(context);
+					SDL_RenderPresent(renderer.get());
+					context.clear_frame();
+					SDL_Delay(1);
 				}
+			};
 
-				state.on_render(context);
-				SDL_RenderPresent(renderer.get());
-				context.clear_frame();
-				SDL_Delay(1);
-			}
-		};
-
-		if constexpr (std::is_constructible_v<GameState, app_context &>)
+		if constexpr (std::is_constructible_v<GameState, app_context&>)
 		{
 			auto state = GameState(context);
 

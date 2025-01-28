@@ -174,7 +174,7 @@ uint32_t world_space::local_seed(SDL_Point const & coordinate) const
 	return hash ^ _global_seed;
 }
 
-world_coordinate world_space::query_object(world_coordinate const & origin, world_object const & object)
+world_coordinate world_space::query_object(world_coordinate const & origin, world_object const & object) const
 {
 	// HINT: This environment query performs a breadth-first search from the origin - is this the most ideal way to
 	// query an environment?

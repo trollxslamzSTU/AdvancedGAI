@@ -35,14 +35,14 @@ namespace
 
 		bool at_target = false;
 
-		bool has_wood = false;
-		bool has_rock = true;
+		world_coordinate has_tree;
+		world_coordinate has_rock;
 
 		
 
 		static bool is_complete(world_space& space, building_work& work)
 		{
-			return work.at_target && work.has_rock && work.has_wood;
+			return work.at_target;
 		}
 	};
 
@@ -98,6 +98,47 @@ namespace
 		}
 	};
 
+	struct house_assign_pawn final : public goap_action<world_space, building_work>
+	{
+		bool test(world_space const& space, building_work const& work) override
+		{
+			return !work.pawn_key && !space.unassigned_pawns().empty();
+		}
+
+		void apply(world_space& space, building_work& work) override
+		{
+			SDL_assert(!work.pawn_key);
+
+			work.pawn_key = space.assign_pawn();
+
+			if (world_space::pawn* const pawn = space.has_assigned_pawn(work.pawn_key))
+			{
+				work.origin = world_coordinate(space.has_assigned_pawn(work.pawn_key)->position);
+			}
+		}
+	};
+
+	struct house_goto_target final : public goap_action<world_space, building_work>
+	{
+		bool test(world_space const& space, building_work const& work) override
+		{
+			return work.pawn_key && !work.at_target;
+		}
+
+		void apply(world_space& space, building_work& work) override
+		{
+			world_space::pawn* const pawn = space.has_assigned_pawn(work.pawn_key);
+			
+
+			if (!pawn->position.move_toward(0.001f, world_position(work.target)))
+			{
+				work.at_target = true;
+
+				space.unassign_pawn(work.pawn_key);
+			}
+		}
+	};
+
 	struct house_building final : public goap_action<world_space, building_work>
 	{
 		bool test(world_space const& space, building_work const& work) override
@@ -118,23 +159,19 @@ namespace
 		}
 	};
 
-	struct destroy_object final : public goap_action<world_space, building_work>
+	struct find_object final : public goap_action<world_space, building_work>
 	{
 		bool test(world_space const& space, building_work const& work) override
 		{
-			return !work.pawn_key && !space.unassigned_pawns().empty();
+			return true;
 		}
 
 		void apply(world_space& space, building_work& work) override
 		{
-			SDL_assert(!work.pawn_key);
-
-			work.pawn_key = space.assign_pawn();
-
-			if (world_space::pawn* const pawn = space.has_assigned_pawn(work.pawn_key))
-			{
-				work.origin = world_coordinate(space.has_assigned_pawn(work.pawn_key)->position);
-			}
+			world_coordinate rock = space.query_object(work.target, world_object_rock);
+			world_coordinate tree = space.query_object(work.target, world_object_tree);
+			work.has_rock = rock;
+			work.has_tree = tree;
 		}
 	};
 
@@ -251,6 +288,14 @@ namespace
 					});
 			}
 
+			if (context.mouse_buttons().is_pressed(SDL_BUTTON_RIGHT))
+			{
+				_building_work.push_back(building_work
+					{
+						.target = world_coordinate(screen_to_world(context, context.mouse_position())),
+					});
+			}
+
 			if (context.key_buttons().is_pressed(SDL_SCANCODE_H))
 			{
 				_is_showing_grid = !_is_showing_grid;
@@ -287,6 +332,34 @@ namespace
 				{
 					action->apply(_space, work);
 					_walking_work.push_back(work);
+				}
+				break;
+				}
+			}
+
+			if (!_building_work.empty())
+			{
+				building_work work = _building_work.front();
+
+				_building_work.pop_front();
+
+				auto const [action, step] = _building_plan(building_work::is_complete, _space, work);
+
+				switch (step)
+				{
+				default: sdl_game::unreachable();
+				case goap_step_complete: break;
+
+				case goap_step_impossible:
+				{
+					_building_work.push_back(work);
+				}
+				break;
+
+				case goap_step_progress:
+				{
+					action->apply(_space, work);
+					_building_work.push_back(work);
 				}
 				break;
 				}
@@ -330,6 +403,19 @@ namespace
 			}
 
 			for (walking_work const& work : _walking_work)
+			{
+				SDL_FPoint const screen_position = world_to_screen(context, world_position(work.target)) - (_cell_size / to_fpoint(2.f));
+
+				context.render_rect_outline(sdl_game::rgb(0.f, 1.f, 0.f), 2.f,
+					{
+						.x = screen_position.x,
+						.y = screen_position.y,
+						.w = _cell_size.x,
+						.h = _cell_size.y,
+					});
+			}
+
+			for (building_work const& work : _building_work)
 			{
 				SDL_FPoint const screen_position = world_to_screen(context, world_position(work.target)) - (_cell_size / to_fpoint(2.f));
 
@@ -385,6 +471,8 @@ namespace
 
 		std::deque<walking_work> _walking_work;
 
+		std::deque<building_work> _building_work;
+
 		goap_plan<world_space, walking_work> _walking_plan =
 		{
 			assign_pawn(),
@@ -393,11 +481,12 @@ namespace
 
 		goap_plan<world_space, building_work> _building_plan =
 		{
-			assign_pawn(),
-			goto_target(),
-			destroy_object(),
-			house_building()
-
+			house_assign_pawn(),
+			find_object(),
+			house_goto_target(),
+			//destroy_object(),
+			house_goto_target(),
+			house_building(),
 		};
 
 		bool _is_showing_grid = false;

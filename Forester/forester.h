@@ -390,7 +390,7 @@ namespace forester
 		 * **Note** that, as the world is functionally infinite, this will continue searching forever until a
 		 * `world_object` matching `object` is found.
 		 */
-		world_coordinate query_object(world_coordinate const & coordinate, world_object const & object);
+		world_coordinate query_object(world_coordinate const & coordinate, world_object const & object) const;
 
 		/**
 		 * Constructs a new `pawn` at `position`, adding it to the world.

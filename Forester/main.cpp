@@ -35,11 +35,14 @@ namespace
 
 		bool at_target = false;
 
+		bool has_wood = false;
+		bool has_rock = true;
 
+		
 
-		static bool is_complete(world_space& space, walking_work& work)
+		static bool is_complete(world_space& space, building_work& work)
 		{
-			return work.at_target;
+			return work.at_target && work.has_rock && work.has_wood;
 		}
 	};
 
@@ -95,14 +98,44 @@ namespace
 		}
 	};
 
-	struct house_building final : public goap_action<world_space, walking_work>
+	struct house_building final : public goap_action<world_space, building_work>
 	{
+		bool test(world_space const& space, building_work const& work) override
+		{
+			return !work.pawn_key && !space.unassigned_pawns().empty();
+		}
 
+		void apply(world_space& space, building_work& work) override
+		{
+			SDL_assert(!work.pawn_key);
+
+			work.pawn_key = space.assign_pawn();
+
+			if (world_space::pawn* const pawn = space.has_assigned_pawn(work.pawn_key))
+			{
+				work.origin = world_coordinate(space.has_assigned_pawn(work.pawn_key)->position);
+			}
+		}
 	};
 
-	struct destroy_object final : public goap_action<world_space, walking_work>
+	struct destroy_object final : public goap_action<world_space, building_work>
 	{
+		bool test(world_space const& space, building_work const& work) override
+		{
+			return !work.pawn_key && !space.unassigned_pawns().empty();
+		}
 
+		void apply(world_space& space, building_work& work) override
+		{
+			SDL_assert(!work.pawn_key);
+
+			work.pawn_key = space.assign_pawn();
+
+			if (world_space::pawn* const pawn = space.has_assigned_pawn(work.pawn_key))
+			{
+				work.origin = world_coordinate(space.has_assigned_pawn(work.pawn_key)->position);
+			}
+		}
 	};
 
 	struct game_loop final
@@ -356,6 +389,15 @@ namespace
 		{
 			assign_pawn(),
 			goto_target(),
+		};
+
+		goap_plan<world_space, building_work> _building_plan =
+		{
+			assign_pawn(),
+			goto_target(),
+			destroy_object(),
+			house_building()
+
 		};
 
 		bool _is_showing_grid = false;

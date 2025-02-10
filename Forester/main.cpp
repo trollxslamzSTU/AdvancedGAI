@@ -198,7 +198,8 @@ namespace
 			const world_space::pawn* pawn = space.has_assigned_pawn(work.pawn_key);
 			SDL_Point chunk = work.target.chunk();
 			world_chunk copy = space.fetch_chunk(chunk);
-			if (!(pawn->flags.test(world_space::pawn::flag_collected_rock) || !(pawn->flags.test(world_space::pawn::flag_collected_wood))))
+			if (!(pawn->flags.test(world_space::pawn::flag_collected_rock) &&
+				pawn->flags.test(world_space::pawn::flag_collected_wood)))
 			{
 				return false;
 			}
@@ -206,7 +207,7 @@ namespace
 			{
 				return false;
 			}
-			if (!(copy[work.target.xy()].object == world_object_none))
+			if ((copy[work.target.xy()].object != world_object_none))
 			{
 				return false;
 			}
@@ -216,9 +217,17 @@ namespace
 
 		void apply(world_space& space, building_work& work) override
 		{
+			world_space::pawn* const pawn = space.has_assigned_pawn(work.pawn_key);
+			if (!(pawn->flags.test(world_space::pawn::flag_collected_rock) &&
+				pawn->flags.test(world_space::pawn::flag_collected_wood)))
+			{
+				work.found_target_rock = false;
+				work.found_target_tree = false;
+				return;
+			}
 			SDL_Point chunk = work.target.chunk();
 			world_chunk copy = space.fetch_chunk(chunk);
-			world_space::pawn* const pawn = space.has_assigned_pawn(work.pawn_key);
+			
 			pawn->flags.reset();
 			copy[work.target.xy()].object = world_object_house;
 			space.write_chunk(chunk, copy);
@@ -226,44 +235,6 @@ namespace
 			space.unassign_pawn(work.pawn_key);
 		}
 	};
-
-	/*struct find_object final : public goap_action<world_space, building_work>
-	{
-		bool test(world_space const& space, building_work const& work) override
-		{
-			const world_space::pawn* pawn = space.has_assigned_pawn(work.pawn_key);
-			if (!pawn->flags.test(world_space::pawn::flag_collected_wood))
-			{
-				return true;
-			}
-			if (pawn->flags.test(world_space::pawn::flag_collected_rock))
-			{
-				return true;
-			}
-			return work.pawn_key && !work.found_target_resource;
-		}
-
-		void apply(world_space& space, building_work& work) override
-		{
-			world_space::pawn* const pawn = space.has_assigned_pawn(work.pawn_key);
-			if (pawn->flags.test(world_space::pawn::flag_collected_wood))
-			{
-				work.wood_gotten = true;
-				return;
-			};
-			if (pawn->flags.test(world_space::pawn::flag_collected_rock))
-			{
-				work.rock_gotten = true;
-				return;
-			};
-			
-			work.has_rock = space.query_object(work.target, world_object_rock);
-			work.has_tree = space.query_object(work.target, world_object_tree);
-		
-
-			work.found_target_resource = true;
-		}
-	};*/
 
 	struct find_rock final : public goap_action<world_space, building_work>
 	{
@@ -349,7 +320,6 @@ namespace
 			{
 				return false;
 			}
-
 			return true;
 		}
 
@@ -369,8 +339,13 @@ namespace
 			{
 				copy[work.has_rock.xy()].object = world_object_none;
 				pawn->flags.set(world_space::pawn::flag_collected_rock);
+				space.write_chunk(chunk, copy);
 			}
-			space.write_chunk(chunk, copy);
+			else
+			{
+				work.found_target_rock = false;
+			}
+			
 			
 		}
 	};
@@ -404,14 +379,18 @@ namespace
 			{
 				copy[work.has_tree.xy()].object = world_object_none;
 				pawn->flags.set(world_space::pawn::flag_collected_wood);
+				space.write_chunk(chunk, copy);
 			}
-
+			else
+			{
+				work.found_target_tree = false;
+			}
 			/*if (copy[work.has_rock.xy()].object == world_object_rock)
 			{
 				copy[work.has_rock.xy()].object = world_object_none;
 				pawn->flags.set(world_space::pawn::flag_collected_rock);
 			}*/
-			space.write_chunk(chunk, copy);
+			
 			
 		}
 	};

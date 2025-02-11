@@ -20,6 +20,13 @@ namespace
 		zombie_archetype_spotter,
 	};
 
+	enum zombie_action
+	{
+		zombie_action_seek_player,
+		zombie_action_avoid_wall,
+		zombie_action_idle,
+	};
+
 	struct zombie_actor final
 	{
 		entity_location location;
@@ -63,6 +70,64 @@ namespace
 		float squared = ((dx * dx) - (dy * dy));
 		return squared <= (radius * radius);
 	}
+	float utility_seek_player(zombie_actor const& zombie, SDL_FPoint player_position)
+	{
+		float distance = static_cast<float>(SDL_sqrt((player_position.x - zombie.location.position().x) * (player_position.x - zombie.location.position().x) +
+			(player_position.y - zombie.location.position().y) * (player_position.y - zombie.location.position().y)));
+		return 1.0f / (distance + 1.0f);
+	}
+	float utility_idle()
+	{
+		return 0.1f;
+	}
+	zombie_action choose_best_action(zombie_actor const& zombie, SDL_FPoint player_position)
+	{
+		float util_seek = utility_seek_player(zombie, player_position);
+		//float util_avoid = utility_avoid_wall(zombie, walls);
+		float util_idle = utility_idle();
+
+		if (util_seek > util_idle)
+		{
+			return zombie_action_idle;
+		}
+		else
+		{
+			return zombie_action_idle;
+		}
+	}
+	bool is_point_in_wall(SDL_FPoint point, std::vector<SDL_FRect> const& walls)
+	{
+		SDL_Point newPoint = { static_cast<int>(point.x), static_cast<int>(point.y) };
+		for (auto const& wall : walls)
+		{
+			SDL_Rect rect = {
+				static_cast<int>(wall.x),
+				static_cast<int>(wall.y),
+				static_cast<int>(wall.w),
+				static_cast<int>(wall.h)
+			};
+
+			if (SDL_PointInRect(&newPoint, &rect))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	SDL_FPoint get_random_position_in_arena(int arena_width, int arena_height, std::vector<SDL_FRect> const& walls)
+	{
+		SDL_FPoint position;
+		do
+		{
+			float x = static_cast<float>(rand() % arena_width);
+			float y = static_cast<float>(rand() % arena_height);
+			position = { x, y };
+		} while (is_point_in_wall(position, walls));
+
+		return position;
+	}
+	
 	SDL_FPoint Seek(SDL_FPoint target, SDL_FPoint position)
 	{
 		SDL_FPoint velocity = target - position;
@@ -384,7 +449,7 @@ namespace
 			SDL_FPoint const movement = to_fpoint(key_direction) * to_fpoint(player_speed);
 			SDL_FPoint moved_player_position = _player.position() + movement;
 			auto const player_area = circle_shape(moved_player_position, 24.f);
-
+			std::vector<SDL_FRect> walls;
 			for (auto const [coordinate, _] : _level.walls())
 			{
 				SDL_FRect const wall_rect =
@@ -394,7 +459,7 @@ namespace
 					.w = tile_size.x,
 					.h = tile_size.y,
 				};
-
+				walls.push_back(wall_rect);
 				if (player_area.has_rect_intersection(wall_rect))
 				{
 					moved_player_position = _player.position();
@@ -451,104 +516,118 @@ namespace
 			{
 				
 				zombie.damage_flash.tick();
-				// TODO: Implement your zombie "squad" behavior.
 				zombie.is_alerted = false;
-				if (zombie.is_alerted)
+
+				zombie_action action = choose_best_action(zombie, _player.position());
+				switch (action)
 				{
-					SDL_FPoint direction = _player.position() - zombie.location.position();
-					float distance = static_cast<float>(SDL_sqrt(direction.x * direction.x + direction.y * direction.y));
-					SDL_FPoint _seekVelocity = Seek(_player.position(), zombie.location.position());
-					SDL_FPoint _avoidVelocity = Avoid(zombie.location.position(), zombie, _level);
-					SDL_FPoint steering = _seekVelocity + _avoidVelocity;
-					float steering_distance = static_cast<float>(SDL_sqrt((steering.x * steering.x) + (steering.y * steering.y)));
-
-					if (steering_distance > 0)
+					case zombie_action_seek_player:
 					{
-						steering.x /= steering_distance;
-						steering.y /= steering_distance;
-					}
+						SDL_FPoint direction = _player.position() - zombie.location.position();
+						float distance = static_cast<float>(SDL_sqrt(direction.x * direction.x + direction.y * direction.y));
+						SDL_FPoint _seekVelocity = Seek(_player.position(), zombie.location.position());
+						SDL_FPoint _avoidVelocity = Avoid(zombie.location.position(), zombie, _level);
+						SDL_FPoint steering = _seekVelocity + _avoidVelocity;
+						float steering_distance = static_cast<float>(SDL_sqrt((steering.x * steering.x) + (steering.y * steering.y)));
 
-					// Move the zombie towards the player
-					constexpr float const zombie_speed = 0.35f;
-					SDL_FPoint moved_zombie_position = zombie.location.position() + steering * to_fpoint(zombie_speed);
-					auto const zombie_area = circle_shape(moved_zombie_position, 24.f);
-
-					for (auto const [coordinate, _] : _level.walls())
-					{
-						SDL_FRect const wall_rect =
+						if (steering_distance > 0)
 						{
-							.x = static_cast<float>(coordinate.x * tile_size.x),
-							.y = static_cast<float>(coordinate.y * tile_size.y),
-							.w = tile_size.x,
-							.h = tile_size.y,
-						};
-						if (zombie_area.has_rect_intersection(wall_rect))
-						{
-							moved_zombie_position = zombie.location.position();
-
-							break;
+							steering.x /= steering_distance;
+							steering.y /= steering_distance;
 						}
 
+						// Move the zombie towards the player
+						constexpr float const zombie_speed = 0.35f;
+						SDL_FPoint moved_zombie_position = zombie.location.position() + steering * to_fpoint(zombie_speed);
+						zombie.location.update(moved_zombie_position, direction);
 					}
-					zombie.location.update(moved_zombie_position, direction);
-				}
-				else
-				{
-					auto const& floor_tiles = _level.floor();
-					if (floor_tiles.empty())
+					break;
+					case zombie_action_avoid_wall:
 					{
-						return;
+						//Unneeded right now
 					}
-					if (zombie.location.position() == zombie.zombie_target || zombie.first_run == true)
+					break;
+					case zombie_action_idle:
 					{
-						std::random_device rd;
-						std::mt19937 gen(rd());
-						std::uniform_int_distribution<size_t> dist(0, floor_tiles.size() - 1);
-						auto randPos = floor_tiles.begin();
-						std::advance(randPos, dist(gen));
-						zombie.zombie_target = { static_cast<float>(randPos->first.x * 64.0f), static_cast<float>(randPos->first.y * 64.0f) };
+						if (zombie.zombie_target.x == 0 && zombie.zombie_target.y == 0)
+						{
+							zombie.zombie_target = get_random_position_in_arena(20 * 64, 12 * 64, walls);
+						}
+
+						SDL_FPoint direction = zombie.zombie_target - zombie.location.position();
+						float distance = static_cast<float>(SDL_sqrt(direction.x * direction.x + direction.y * direction.y));
+						SDL_FPoint _seekVelocity = Seek(zombie.zombie_target, zombie.location.position());
+						SDL_FPoint _avoidVelocity = Avoid(zombie.location.position(), zombie, _level);
+						SDL_FPoint steering = _seekVelocity + _avoidVelocity;
+						float steering_distance = static_cast<float>(SDL_sqrt((steering.x * steering.x) + (steering.y * steering.y)));
+
+						if (steering_distance > 0)
+						{
+							steering.x /= steering_distance;
+							steering.y /= steering_distance;
+						}
+
+						// Move the zombie towards the player
+						constexpr float const zombie_speed = 0.15f;
+						SDL_FPoint moved_zombie_position = zombie.location.position() + steering * to_fpoint(zombie_speed);
+						zombie.location.update(moved_zombie_position, direction);
 						
-						zombie.first_run = false;
-					}
-					
-
-					SDL_FPoint direction = zombie.zombie_target - zombie.location.position();
-					float distance = static_cast<float>(SDL_sqrt(direction.x * direction.x + direction.y * direction.y));
-					SDL_FPoint _seekVelocity = Seek(zombie.zombie_target, zombie.location.position());
-					SDL_FPoint _avoidVelocity = Avoid(zombie.location.position(), zombie, _level);
-					SDL_FPoint steering = _seekVelocity + _avoidVelocity;
-					float steering_distance = static_cast<float>(SDL_sqrt((steering.x * steering.x) + (steering.y * steering.y)));
-
-					if (steering_distance > 0)
-					{
-						steering.x /= steering_distance;
-						steering.y /= steering_distance;
-					}
-
-					// Move the zombie towards the player
-					constexpr float const zombie_speed = 0.35f;
-					SDL_FPoint moved_zombie_position = zombie.location.position() + steering * to_fpoint(zombie_speed);
-					auto const zombie_area = circle_shape(moved_zombie_position, 24.f);
-
-					for (auto const [coordinate, _] : _level.walls())
-					{
-						SDL_FRect const wall_rect =
+						if (distance < 1.0f)
 						{
-							.x = static_cast<float>(coordinate.x * tile_size.x),
-							.y = static_cast<float>(coordinate.y * tile_size.y),
-							.w = tile_size.x,
-							.h = tile_size.y,
-						};
-						if (zombie_area.has_rect_intersection(wall_rect))
-						{
-							moved_zombie_position = zombie.location.position();
-
-							break;
+							zombie.zombie_target = get_random_position_in_arena(20 * 64, 12 * 64, walls);
 						}
+					}
+					break;
+					default:
+					{
 
 					}
-					zombie.location.update(moved_zombie_position, direction);
+					break;
 				}
+
+
+
+				//if (zombie.is_alerted)
+				//{
+				//	SDL_FPoint direction = _player.position() - zombie.location.position();
+				//	float distance = static_cast<float>(SDL_sqrt(direction.x * direction.x + direction.y * direction.y));
+				//	SDL_FPoint _seekVelocity = Seek(_player.position(), zombie.location.position());
+				//	SDL_FPoint _avoidVelocity = Avoid(zombie.location.position(), zombie, _level);
+				//	SDL_FPoint steering = _seekVelocity + _avoidVelocity;
+				//	float steering_distance = static_cast<float>(SDL_sqrt((steering.x * steering.x) + (steering.y * steering.y)));
+
+				//	if (steering_distance > 0)
+				//	{
+				//		steering.x /= steering_distance;
+				//		steering.y /= steering_distance;
+				//	}
+
+				//	// Move the zombie towards the player
+				//	constexpr float const zombie_speed = 0.35f;
+				//	SDL_FPoint moved_zombie_position = zombie.location.position() + steering * to_fpoint(zombie_speed);
+				//	zombie.location.update(moved_zombie_position, direction);
+				//}
+				//else
+				//{
+				//	
+				//	SDL_FPoint direction = _player.position() - zombie.location.position();
+				//	float distance = static_cast<float>(SDL_sqrt(direction.x * direction.x + direction.y * direction.y));
+				//	SDL_FPoint _seekVelocity = Seek(_player.position(), zombie.location.position());
+				//	SDL_FPoint _avoidVelocity = Avoid(zombie.location.position(), zombie, _level);
+				//	SDL_FPoint steering = _seekVelocity + _avoidVelocity;
+				//	float steering_distance = static_cast<float>(SDL_sqrt((steering.x * steering.x) + (steering.y * steering.y)));
+
+				//	if (steering_distance > 0)
+				//	{
+				//		steering.x /= steering_distance;
+				//		steering.y /= steering_distance;
+				//	}
+
+				//	// Move the zombie towards the player
+				//	constexpr float const zombie_speed = 0.35f;
+				//	SDL_FPoint moved_zombie_position = zombie.location.position() + steering * to_fpoint(zombie_speed);
+				//	zombie.location.update(moved_zombie_position, direction);
+				//}
 				
 			}
 

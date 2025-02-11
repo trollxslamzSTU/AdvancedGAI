@@ -25,6 +25,7 @@ namespace
 		zombie_action_seek_player,
 		zombie_action_avoid_wall,
 		zombie_action_idle,
+		zombie_action_alerted,
 	};
 
 	struct zombie_actor final
@@ -76,6 +77,14 @@ namespace
 			(player_position.y - zombie.location.position().y) * (player_position.y - zombie.location.position().y)));
 		return 1.0f / (distance + 1.0f);
 	}
+	float utility_alerted(zombie_actor const& zombie)
+	{
+		if (zombie.is_alerted)
+		{
+			return 1.0f;
+		}
+		return 0.0f;
+	}
 	float utility_idle()
 	{
 		return 0.1f;
@@ -88,7 +97,7 @@ namespace
 
 		if (util_seek > util_idle)
 		{
-			return zombie_action_idle;
+			return zombie_action_seek_player;
 		}
 		else
 		{
@@ -127,7 +136,31 @@ namespace
 
 		return position;
 	}
-	
+	bool check_for_breadcrumb(zombie_actor const& zombie, SDL_FPoint breadcrumb)
+	{
+		SDL_FPoint sightlineDistance = zombie_sightline(zombie);
+		/*float sightline_range = static_cast<float>(SDL_sqrt((sightlineDistance.x - zombie.location.position().x * sightlineDistance.x - zombie.location.position().x) +
+			(sightlineDistance.y - zombie.location.position().y * sightlineDistance.y - zombie.location.position().y)));*/
+		SDL_FPoint to_breadcrumb = breadcrumb - zombie.location.position();
+		SDL_FPoint to_sightline = sightlineDistance - zombie.location.position();
+		
+
+		
+
+		return true;
+		return false;
+	}
+	SDL_FPoint breadcrumb_location(zombie_actor const & zombie, entity_location const & player_location)
+	{
+		for (SDL_FPoint const& breadcrumb : player_location.breadcrumbs())
+		{
+			if (check_for_breadcrumb(zombie, breadcrumb))
+			{
+				return breadcrumb;
+			}
+		}
+		return { -1, -1 };
+	}
 	SDL_FPoint Seek(SDL_FPoint target, SDL_FPoint position)
 	{
 		SDL_FPoint velocity = target - position;
@@ -516,7 +549,7 @@ namespace
 			{
 				
 				zombie.damage_flash.tick();
-				zombie.is_alerted = false;
+				
 
 				zombie_action action = choose_best_action(zombie, _player.position());
 				switch (action)
@@ -545,6 +578,11 @@ namespace
 					case zombie_action_avoid_wall:
 					{
 						//Unneeded right now
+					}
+					break;
+					case zombie_action_alerted:
+					{
+						
 					}
 					break;
 					case zombie_action_idle:

@@ -240,6 +240,8 @@ namespace
 	{
 		bool test(world_space const& space, building_work const& work) override
 		{
+			SDL_Point chunk = work.has_rock.chunk();
+			world_chunk copy = space.fetch_chunk(chunk);
 			const world_space::pawn* pawn = space.has_assigned_pawn(work.pawn_key);
 			if (!work.pawn_key)
 			{
@@ -274,6 +276,8 @@ namespace
 	{
 		bool test(world_space const& space, building_work const& work) override
 		{
+			SDL_Point chunk = work.has_rock.chunk();
+			world_chunk copy = space.fetch_chunk(chunk);
 			const world_space::pawn* pawn = space.has_assigned_pawn(work.pawn_key);
 			if (pawn->flags.test(world_space::pawn::flag_collected_wood))
 			{
@@ -326,6 +330,7 @@ namespace
 		void apply(world_space& space, building_work& work) override
 		{
 			world_space::pawn* const pawn = space.has_assigned_pawn(work.pawn_key);
+			
 			SDL_Point chunk = work.has_rock.chunk();
 			world_chunk copy = space.fetch_chunk(chunk);
 
@@ -356,6 +361,7 @@ namespace
 		{
 			SDL_Point chunk = work.has_tree.chunk();
 			world_chunk copy = space.fetch_chunk(chunk);
+
 			if (!work.pawn_key)
 			{
 				return false;
@@ -372,6 +378,7 @@ namespace
 		void apply(world_space& space, building_work& work) override
 		{
 			world_space::pawn* const pawn = space.has_assigned_pawn(work.pawn_key);
+			
 			SDL_Point chunk = work.has_tree.chunk();
 			world_chunk copy = space.fetch_chunk(chunk);
 

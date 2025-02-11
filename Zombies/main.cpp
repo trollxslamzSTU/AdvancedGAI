@@ -40,6 +40,7 @@ namespace
 
 		sdl_game::countdown damage_flash;
 		SDL_FPoint zombie_target;
+		SDL_FPoint breadcrumb_target;
 		bool first_run = true;
 	};
 
@@ -94,10 +95,15 @@ namespace
 		float util_seek = utility_seek_player(zombie, player_position);
 		//float util_avoid = utility_avoid_wall(zombie, walls);
 		float util_idle = utility_idle();
+		float util_alerted = utility_alerted(zombie);
 
 		if (util_seek > util_idle)
 		{
 			return zombie_action_seek_player;
+		}
+		else if (util_alerted > util_seek && util_alerted > util_idle)
+		{
+			return zombie_action_alerted;
 		}
 		else
 		{
@@ -136,30 +142,18 @@ namespace
 
 		return position;
 	}
-	bool check_for_breadcrumb(zombie_actor const& zombie, SDL_FPoint breadcrumb)
-	{
-		SDL_FPoint sightlineDistance = zombie_sightline(zombie);
-		/*float sightline_range = static_cast<float>(SDL_sqrt((sightlineDistance.x - zombie.location.position().x * sightlineDistance.x - zombie.location.position().x) +
-			(sightlineDistance.y - zombie.location.position().y * sightlineDistance.y - zombie.location.position().y)));*/
-		SDL_FPoint to_breadcrumb = breadcrumb - zombie.location.position();
-		SDL_FPoint to_sightline = sightlineDistance - zombie.location.position();
-		
-
-		
-
-		return true;
-		return false;
-	}
 	SDL_FPoint breadcrumb_location(zombie_actor const & zombie, entity_location const & player_location)
 	{
 		for (SDL_FPoint const& breadcrumb : player_location.breadcrumbs())
 		{
-			if (check_for_breadcrumb(zombie, breadcrumb))
+			auto const breadcrumb_area = sdl_game::circle_shape(breadcrumb, 26.f);
+			if (breadcrumb_area.has_line_intersection(zombie.location.position(), zombie_sightline(zombie)))
 			{
 				return breadcrumb;
 			}
 		}
-		return { -1, -1 };
+		return { 0,0 };
+		
 	}
 	SDL_FPoint Seek(SDL_FPoint target, SDL_FPoint position)
 	{
@@ -573,6 +567,12 @@ namespace
 						constexpr float const zombie_speed = 0.35f;
 						SDL_FPoint moved_zombie_position = zombie.location.position() + steering * to_fpoint(zombie_speed);
 						zombie.location.update(moved_zombie_position, direction);
+						SDL_FPoint breadcrumb_loc = breadcrumb_location(zombie, _player);
+						if (breadcrumb_loc.x != 0.f && breadcrumb_loc.y != 0.f)
+						{
+							zombie.is_alerted = true;
+							zombie.breadcrumb_target = breadcrumb_loc;
+						}
 					}
 					break;
 					case zombie_action_avoid_wall:
@@ -582,7 +582,27 @@ namespace
 					break;
 					case zombie_action_alerted:
 					{
-						
+						SDL_FPoint direction = zombie.breadcrumb_target - zombie.location.position();
+						float distance = static_cast<float>(SDL_sqrt(direction.x * direction.x + direction.y * direction.y));
+						SDL_FPoint _seekVelocity = Seek(zombie.breadcrumb_target, zombie.location.position());
+						SDL_FPoint _avoidVelocity = Avoid(zombie.location.position(), zombie, _level);
+						SDL_FPoint steering = _seekVelocity + _avoidVelocity;
+						float steering_distance = static_cast<float>(SDL_sqrt((steering.x * steering.x) + (steering.y * steering.y)));
+
+						if (steering_distance > 0)
+						{
+							steering.x /= steering_distance;
+							steering.y /= steering_distance;
+						}
+
+						// Move the zombie towards the player
+						constexpr float const zombie_speed = 0.15f;
+						SDL_FPoint moved_zombie_position = zombie.location.position() + steering * to_fpoint(zombie_speed);
+						zombie.location.update(moved_zombie_position, direction);
+						if (distance < 1.0f)
+						{
+							zombie.is_alerted = false;
+						}
 					}
 					break;
 					case zombie_action_idle:
@@ -613,6 +633,12 @@ namespace
 						if (distance < 1.0f)
 						{
 							zombie.zombie_target = get_random_position_in_arena(20 * 64, 12 * 64, walls);
+						}
+						SDL_FPoint breadcrumb_loc = breadcrumb_location(zombie, _player);
+						if (breadcrumb_loc.x != 0.f && breadcrumb_loc.y != 0.f)
+						{
+							zombie.is_alerted = true;
+							zombie.breadcrumb_target = breadcrumb_loc;
 						}
 					}
 					break;

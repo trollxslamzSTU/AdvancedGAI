@@ -176,6 +176,7 @@ namespace
 		bool test(world_space const& space, building_work const& work) override
 		{
 			return work.pawn_key && !work.at_target;
+
 		}
 
 		void apply(world_space& space, building_work& work) override

@@ -28,7 +28,7 @@ protected:
 	int  ScoreTheBoard(Board boardToScore);
 	int	 ScoreBoardPieces(Board boardToScore);
 	int  ScoreBoardPositioning(Board boardToScore);
-
+	int  GetPieceIndex(PIECE piece);
 	
 	bool IsGameOver(Board boardToCheck);
 

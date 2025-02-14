@@ -25,7 +25,7 @@ namespace forester
 		/**
 		 * Tests if the action is performanable based on the existing state of `args`.
 		 */
-		virtual bool test(Args const &... args) = 0;
+		virtual bool test(Args &... args) = 0;
 	};
 
 	/**

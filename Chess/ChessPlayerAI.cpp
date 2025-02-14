@@ -19,9 +19,9 @@ using namespace::std;
 
 const int kPawnScore		= 200;
 const int kKnightScore		= 400;
-const int kBishopScore		= 500;
-const int kRookScore		= 600;
-const int kQueenScore		= 1000;
+const int kBishopScore		= 1000;
+const int kRookScore		= 1200;
+const int kQueenScore		= 2000;
 const int kKingScore		= 20000;
 
 const int kCheckScore		= 1;
@@ -34,7 +34,15 @@ const int kPositionalWeight	= 1; //Whether in CHECK, CHECKMATE or STALEMATE.
 const int kOrderWieght = 3;
 const int kScoreWeight = 2;
 const int kSquareWeight = 125;
-
+int MVVLVA[6][6] = {
+	
+	{ 105, 205, 305, 405, 505, 1005 }, 
+	{ 104, 204, 304, 404, 504, 1004 }, 
+	{ 103, 203, 303, 403, 503, 1003 }, 
+	{ 102, 202, 302, 402, 502, 1002 }, 
+	{ 101, 201, 301, 401, 501, 1001 }, 
+	{ 100, 200, 300, 400, 500, 1000 }  
+};
 //--------------------------------------------------------------------------------------------------
 
 ChessPlayerAI::ChessPlayerAI(sdl_game::app_context & context, COLOUR colour, Board* board, vector<SDL_Point>* highlights, SDL_Point* selectedPiecePosition, Move* lastMove, int* searchDepth)
@@ -146,7 +154,8 @@ bool ChessPlayerAI::TakeATurn(SDL_Event e)
 {
 	//TODO: Code your own function - Remove this version after, it is only here to keep the game functioning for testing.
 	GetAllMoveOptions(*mChessBoard, mTeamColour, &moves);
-	//OrderMoves(*mChessBoard, &moves, true);
+	OrderMoves(*mChessBoard, &moves, true);
+	CropMoves(&moves, 10);
 	MiniMax(*mChessBoard, *mDepthToSearch, moves.data());
 	bool gameStillActive = MakeAMove(&mBestMove, mChessBoard);
 
@@ -177,6 +186,8 @@ int ChessPlayerAI::Maximise(Board board, int depth, Move* currentMove, int alpha
 	vector<Move> tempMoves;
 	GetAllMoveOptions(board, mTeamColour, &tempMoves);
 	OrderMoves(board, &tempMoves, false);
+	CropMoves(&moves, 5);
+
 	for (Move& move : tempMoves)
 	{
 		Board boardCopy;
@@ -216,6 +227,7 @@ int ChessPlayerAI::Minimise(Board board, int depth, Move* bestMove, int alpha , 
 	vector <Move> tempMoves;
 	GetAllMoveOptions(board, mOpponentColour, &tempMoves);
 	OrderMoves(board, &tempMoves, true);
+	CropMoves(&moves, 5);
 	for (Move& move : tempMoves)
 	{
 		Board boardCopy;
@@ -275,8 +287,14 @@ void ChessPlayerAI::ValueMoves(Board board, vector<Move>* moves)
 	moveValue = 0;
 	for (Move& move : *moves)
 	{	
-		
 		BoardPiece capPiece = board.currentLayout[move.to_X][move.to_Y];
+		BoardPiece attackerPiece = board.currentLayout[move.from_X][move.from_Y];
+		if (capPiece.piece != PIECE_NONE)
+		{
+			moveValue += MVVLVA[GetPieceIndex(capPiece.piece)][GetPieceIndex(attackerPiece.piece)];
+		}
+		move.score = moveValue;
+		/*BoardPiece capPiece = board.currentLayout[move.to_X][move.to_Y];
 		if (capPiece.piece != PIECE_NONE)
 		{
 			int capPieceValue = 0;
@@ -354,15 +372,43 @@ void ChessPlayerAI::ValueMoves(Board board, vector<Move>* moves)
 			}
 			moveValue += pieceValue;
 		}
-		move.score = moveValue;
+		move.score = moveValue;*/
 	}
 }
 
+int ChessPlayerAI::GetPieceIndex(PIECE piece)
+{
+	switch (piece)
+	{
+	case PIECE_PAWN:
+		return 0;
+	case PIECE_KNIGHT:
+		return 1;
+	case PIECE_BISHOP:
+		return 2;
+	case PIECE_ROOK:
+		return 3;
+	case PIECE_QUEEN:
+		return 4;
+	case PIECE_KING:
+		return 5;
+	default:
+		return 0; 
+	}
+}
 //--------------------------------------------------------------------------------------------------
 
 void ChessPlayerAI::CropMoves(vector<Move>* moves, unsigned int maxNumberOfMoves)
 {
-	//TODO
+	if (moves->size() > maxNumberOfMoves)
+	{
+		std::sort(moves->begin(), moves->end(), [](Move a, Move b)
+			{
+				return a.score > b.score;
+			});
+
+		moves->resize(maxNumberOfMoves);
+	}
 }
 
 //--------------------------------------------------------------------------------------------------

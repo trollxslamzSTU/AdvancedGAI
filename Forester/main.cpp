@@ -46,7 +46,7 @@ namespace
 		bool wood_gotten = false;
 
 		bool house_built = false;
-
+		bool good_path = false;
 		static bool is_complete(world_space& space, building_work& work)
 		{
 			return work.house_built;
@@ -278,6 +278,7 @@ namespace
 			{
 				return false;
 			}
+			// This breaks across PCs for some reason leading to the cancelling to break and the pawn to not grab resources when it should.
 			//if ((work.rock_gotten && work.wood_gotten))
 			//{
 			//	return false;

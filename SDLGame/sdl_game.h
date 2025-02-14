@@ -690,6 +690,13 @@ namespace sdl_game
 					ticks_previous = ticks_current;
 					accumulated_time += delta_time;
 
+#ifdef _DEBUG
+					if (accumulated_time > 1.0f)
+					{
+						accumulated_time = info.target_frame_time; // if we come back from breakpoint
+					}
+#endif
+
 					if constexpr (requires (GameState state, app_context const& context) { { state.on_update(context) } -> std::same_as<void>; })
 					{
 						while (accumulated_time >= info.target_frame_time)

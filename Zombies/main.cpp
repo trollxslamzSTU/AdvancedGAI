@@ -151,11 +151,11 @@ namespace
 	SDL_FPoint breadcrumb_location(zombie_actor & zombie, entity_location const & player_location, level_state _level)
 	{
 		Uint32 current_time = SDL_GetTicks();
-		if (current_time < zombie.breadcrumb_cooldown)
+		/*if (current_time < zombie.breadcrumb_cooldown)
 		{
-			return { 0, 0 }; 
+			return { -1, -1 }; 
 			
-		}
+		}*/
 		for (SDL_FPoint const& breadcrumb : player_location.breadcrumbs())
 		{
 			auto const breadcrumb_area = sdl_game::circle_shape(breadcrumb, 26.f);
@@ -183,9 +183,17 @@ namespace
 					zombie.breadcrumb_timeout = current_time + 8000;
 					return breadcrumb;
 				}
+				if (zombie.is_alerted)
+				{
+					zombie.breadcrumb_cooldown = current_time + 400;
+					zombie.breadcrumb_timeout = current_time + 8000;
+					return breadcrumb;
+
+				}
+				
 			}
 		}
-		return { 0,0 };
+		return { -1, -1 };
 	}
 	bool see_player_location(zombie_actor const& zombie, entity_location const& player_location, level_state _level)
 	{
@@ -760,14 +768,19 @@ namespace
 					//		
 					//	}
 					//}
-					break;
+					//break;
 					case zombie_action_alerted:
 					{
 						Uint32 current_time = SDL_GetTicks();
+						if (zombie.breadcrumb_target.x == -1 && zombie.breadcrumb_target.y == -1)
+						{
+							zombie.is_alerted = false;
+							zombie.breadcrumb_timeout = 0;
+							break;
+						}
 						if (current_time >= zombie.breadcrumb_timeout)
 						{
 							zombie.is_alerted = false;
-							zombie.breadcrumb_target = { -1, -1 };
 							zombie.breadcrumb_timeout = 0;
 							break;
 						}
@@ -845,6 +858,7 @@ namespace
 							if (moved_zombie_position.y > game_height) moved_zombie_position.y = static_cast<float>(game_height);
 							zombie.location.update(moved_zombie_position, direction);
 							heal_near_zombies(zombie, _zombies, 100.0f, 0.05f); 
+							break;
 						}
 						Uint32 current_time = SDL_GetTicks();
 						if (zombie.zombie_target.x == 0 && zombie.zombie_target.y == 0 || current_time >= zombie.wander_cooldown)
@@ -882,7 +896,7 @@ namespace
 						}
 						else {
 							SDL_FPoint breadcrumb_loc = breadcrumb_location(zombie, _player, _level);
-							if (breadcrumb_loc.x != 0.f && breadcrumb_loc.y != 0.f)
+							if (breadcrumb_loc.x != -1 && breadcrumb_loc.y != -1)
 							{
 								zombie.is_alerted = true;
 								zombie.breadcrumb_target = breadcrumb_loc;

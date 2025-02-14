@@ -278,10 +278,10 @@ namespace
 			{
 				return false;
 			}
-			if ((work.rock_gotten && work.wood_gotten))
-			{
-				return false;
-			}
+			//if ((work.rock_gotten && work.wood_gotten))
+			//{
+			//	return false;
+			//}
 			return true;
 
 		}
